@@ -1,0 +1,119 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+
+
+// Models
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String // Hashed
+  role      String     @default("PROFESSIONAL")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointments Appointment[]
+}
+
+model Client {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?  @unique
+  phone     String?
+  cpf       String?  @unique
+  address   String?
+  blocked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointments Appointment[]
+  records      Record[]
+  contracts    Contract[]
+  transactions Transaction[]
+}
+
+model Service {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Decimal
+  duration    Int // in minutes
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  appointments Appointment[]
+}
+
+model Appointment {
+  id        String            @id @default(uuid())
+  startTime DateTime
+  endTime   DateTime
+  status    String @default("SCHEDULED")
+  notes     String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id])
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id])
+  transactions Transaction[]
+}
+
+model Record {
+  id        String   @id @default(uuid())
+  content   String // Evolution text
+  photos    String? // JSON string of photo URLs for now
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+}
+
+model Contract {
+  id        String   @id @default(uuid())
+  title     String
+  pdfUrl    String
+  signed    Boolean  @default(false)
+  signedAt  DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+}
+
+model Transaction {
+  id            String          @id @default(uuid())
+  description   String
+  amount        Decimal
+  type          String
+  status        String   @default("PENDING")
+  dueDate       DateTime?
+  paidAt        DateTime?
+  asaasId       String? // External ID from Asaas
+  invoiceUrl    String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  clientId      String?
+  client        Client?         @relation(fields: [clientId], references: [id])
+  appointmentId String?
+  appointment   Appointment?    @relation(fields: [appointmentId], references: [id])
+}

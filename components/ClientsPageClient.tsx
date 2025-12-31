@@ -1,0 +1,111 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { createClient } from "@/app/actions/client-actions";
+
+export default function ClientsPage({ clients }: { clients: any[] }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    async function handleSubmit(formData: FormData) {
+        setLoading(true);
+        const data = {
+            name: formData.get('name') as string,
+            email: formData.get('email') as string,
+            phone: formData.get('phone') as string,
+            cpf: formData.get('cpf') as string,
+            address: formData.get('address') as string,
+        };
+
+        const result = await createClient(data);
+        setLoading(false);
+
+        if (result.success) {
+            toast.success("Cliente cadastrado com sucesso!");
+            setIsOpen(false);
+            // Refresh logic usually handled by revalidatePath + router.refresh() 
+            // but for simplicity in this demo assume Next.js handles it or we reload
+            window.location.reload();
+        } else {
+            toast.error(result.error);
+        }
+    }
+
+    return (
+        <div className="p-8 space-y-6">
+            <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold">Clientes</h1>
+                <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                    <DialogTrigger asChild>
+                        <Button>Novo Cliente</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Cadastrar Cliente</DialogTitle>
+                        </DialogHeader>
+                        <form action={handleSubmit} className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label>Nome Completo</Label>
+                                <Input name="name" required placeholder="Joana da Silva" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>CPF</Label>
+                                    <Input name="cpf" required placeholder="000.000.000-00" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Telefone</Label>
+                                    <Input name="phone" required placeholder="(11) 99999-9999" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Email</Label>
+                                <Input name="email" type="email" required placeholder="joana@email.com" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Endereço</Label>
+                                <Input name="address" placeholder="Rua das Flores, 123" />
+                            </div>
+                            <Button type="submit" className="w-full" disabled={loading}>
+                                {loading ? "Salvando..." : "Cadastrar"}
+                            </Button>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+            </div>
+
+            <div className="border rounded-lg">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Nome</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Telefone</TableHead>
+                            <TableHead>CPF</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {clients.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={4} className="text-center text-muted-foreground">Nenhum cliente cadastrado.</TableCell>
+                            </TableRow>
+                        ) : clients.map((client) => (
+                            <TableRow key={client.id}>
+                                <TableCell className="font-medium">{client.name}</TableCell>
+                                <TableCell>{client.email}</TableCell>
+                                <TableCell>{client.phone}</TableCell>
+                                <TableCell>{client.cpf}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        </div>
+    );
+}
