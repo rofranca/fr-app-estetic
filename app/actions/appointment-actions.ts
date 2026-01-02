@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache"
 
 export async function getAppointments() {
     const appointments = await prisma.appointment.findMany({
+        where: {
+            status: { not: 'CANCELLED' }
+        },
         include: {
             client: true,
             service: true,

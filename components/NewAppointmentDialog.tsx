@@ -9,23 +9,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { createAppointment } from "@/app/actions/appointment-actions";
 import { getActivePackagesForClient } from "@/app/actions/package-actions";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-} from "@/components/ui/command"
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
 import { ClientSearchDialog } from "./ClientSearchDialog";
-import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface NewAppointmentDialogProps {
     isOpen: boolean;
@@ -46,6 +33,17 @@ export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, s
     const [activePackages, setActivePackages] = useState<any[]>([]);
     const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
+    const [startDate, setStartDate] = useState<string>("");
+
+    // Initialize/Update date when dialog opens or prop changes
+    useEffect(() => {
+        if (selectedDate && isOpen) {
+            // Format to YYYY-MM-DDTHH:mm for datetime-local input
+            const offset = selectedDate.getTimezoneOffset() * 60000;
+            const localISOTime = new Date(selectedDate.getTime() - offset).toISOString().slice(0, 16);
+            setStartDate(localISOTime);
+        }
+    }, [selectedDate, isOpen]);
 
     // Fetch packages when client changes
     useEffect(() => {
@@ -77,7 +75,7 @@ export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, s
     };
 
     const handleSubmit = async () => {
-        if (!selectedDate || !clientId || !professionalId) {
+        if (!startDate || !clientId || !professionalId) {
             toast.error("Preencha os campos obrigatórios");
             return;
         }
@@ -89,6 +87,8 @@ export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, s
 
         setLoading(true);
         try {
+            const startDateTime = new Date(startDate);
+
             if (activePackages.length > 0 && selectedPackageIds.length > 0) {
                 // Multi-package SEQUENTIAL implementation
                 const packagesToSchedule = activePackages.filter(p => selectedPackageIds.includes(p.id));
@@ -96,7 +96,7 @@ export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, s
                 // Sort by service name for consistency
                 packagesToSchedule.sort((a, b) => a.service.name.localeCompare(b.service.name));
 
-                let currentStartTime = new Date(selectedDate);
+                let currentStartTime = new Date(startDateTime);
                 let successCount = 0;
 
                 for (const pkg of packagesToSchedule) {
@@ -128,7 +128,7 @@ export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, s
             } else {
                 // Single service mode
                 const result = await createAppointment({
-                    startTime: selectedDate,
+                    startTime: startDateTime,
                     clientId,
                     serviceId,
                     professionalId,
@@ -158,8 +158,13 @@ export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, s
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label className="text-right">Horário</Label>
-                        <div className="col-span-3 text-sm font-medium">
-                            {selectedDate?.toLocaleString()}
+                        <div className="col-span-3">
+                            <Input
+                                type="datetime-local"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="w-full"
+                            />
                         </div>
                     </div>
 
@@ -243,16 +248,34 @@ export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, s
                         </div>
                     )}
 
+                    {/* Room Selection */}
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="room" className="text-right">Sala</Label>
+                        <div className="col-span-3">
+                            <Select onValueChange={setRoomId} value={roomId}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Selecione a Sala (Opcional)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value=" ">Qualquer Sala</SelectItem>
+                                    {rooms.map(r => (
+                                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="professional" className="text-right">Profissional</Label>
                         <div className="col-span-3">
                             <Select onValueChange={setProfessionalId} value={professionalId}>
-                                <SelectTrigger className="h-12 text-base">
+                                <SelectTrigger className="w-full text-base py-6">
                                     <SelectValue placeholder="Selecione..." />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {professionals.map(p => (
-                                        <SelectItem key={p.id} value={p.id} className="text-base py-3">{p.name}</SelectItem>
+                                        <SelectItem key={p.id} value={p.id} className="text-base py-2">{p.name}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
