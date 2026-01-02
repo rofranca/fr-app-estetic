@@ -28,17 +28,35 @@ model User {
 }
 
 model Client {
-  id        String   @id @default(uuid())
-  name      String
-  email     String?  @unique
-  phone     String?
-  birthDate DateTime? // Data de Nascimento
-  cpf       String?  @unique
-  address   String?
-  blocked   Boolean  @default(false)
-  asaasId   String? // ID do cliente no Asaas
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(uuid())
+  name            String
+  email           String?  @unique
+  phone           String?
+  birthDate       DateTime? // Data de Nascimento
+  cpf             String?  @unique
+  rg              String?
+  
+  // Address Detailed
+  cep             String?
+  address         String?  // Street name
+  number          String?
+  complement      String?
+  neighborhood    String?
+  city            String?
+  state           String?
+  referencePoint  String?
+  
+  notes           String?
+  referralSource  String? @default("NAO_INFORMADO") // AMIGOS, INSTAGRAM, GOOGLE, WHATSAPP, NAO_INFORMADO, FOLDER, PASSANTE
+  status          String  @default("ATIVO") // ATIVO, INATIVO
+  
+  clientCredit    Decimal @default(0)
+  creditNotes     String?
+  
+  blocked         Boolean  @default(false)
+  asaasId         String? // ID do cliente no Asaas
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   appointments Appointment[]
   records      Record[]
