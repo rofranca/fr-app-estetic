@@ -124,21 +124,21 @@ export function BudgetDialog({ isOpen, onClose, client, services, team }: Budget
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-[1000px] w-[95vw] p-0 overflow-hidden bg-white border-none shadow-2xl">
-                <DialogHeader className="bg-blue-600 p-4 text-white">
-                    <DialogTitle className="flex items-center text-xl font-bold">
-                        <DollarSign className="mr-2 h-6 w-6" />
+            <DialogContent className="max-w-[1400px] w-[95vw] p-0 overflow-hidden bg-white border-none shadow-2xl h-[95vh] flex flex-col">
+                <DialogHeader className="bg-blue-600 p-6 text-white shrink-0">
+                    <DialogTitle className="flex items-center text-2xl font-bold">
+                        <DollarSign className="mr-3 h-8 w-8" />
                         Novo Orçamento - {client.name}
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="flex flex-col lg:flex-row h-full max-h-[80vh]">
+                <div className="flex flex-col lg:flex-row flex-1 min-h-0">
                     {/* Main Form Area */}
-                    <div className="flex-1 p-6 overflow-y-auto space-y-6">
+                    <div className="flex-1 p-8 overflow-y-auto space-y-8">
                         {/* Budget Info */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Nome do Orçamento</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                            <div className="space-y-3">
+                                <Label className="text-[12px] font-black uppercase text-slate-400 tracking-widest">Nome do Orçamento</Label>
                                 <Input
                                     placeholder="Ex: Black Friday, Combo Natal..."
                                     value={name}
@@ -146,10 +146,10 @@ export function BudgetDialog({ isOpen, onClose, client, services, team }: Budget
                                     className="bg-white border-slate-200"
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Profissional Responsável</Label>
+                            <div className="space-y-3">
+                                <Label className="text-[12px] font-black uppercase text-slate-400 tracking-widest">Profissional Responsável</Label>
                                 <Select value={userId} onValueChange={setUserId}>
-                                    <SelectTrigger className="bg-white border-slate-200">
+                                    <SelectTrigger className="bg-white border-slate-200 h-12 text-base">
                                         <SelectValue placeholder="Selecione..." />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -159,10 +159,10 @@ export function BudgetDialog({ isOpen, onClose, client, services, team }: Budget
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Status</Label>
+                            <div className="space-y-3">
+                                <Label className="text-[12px] font-black uppercase text-slate-400 tracking-widest">Status</Label>
                                 <Select value={status} onValueChange={setStatus}>
-                                    <SelectTrigger className="bg-white border-slate-200">
+                                    <SelectTrigger className="bg-white border-slate-200 h-12 text-base">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -172,27 +172,26 @@ export function BudgetDialog({ isOpen, onClose, client, services, team }: Budget
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Validade</Label>
+                            <div className="space-y-3">
+                                <Label className="text-[12px] font-black uppercase text-slate-400 tracking-widest">Validade</Label>
                                 <Input
                                     type="date"
                                     value={validUntil}
                                     onChange={(e) => setValidUntil(e.target.value)}
-                                    className="bg-white border-slate-200"
+                                    className="bg-white border-slate-200 h-12 text-base"
                                 />
                             </div>
                         </div>
 
-                        {/* Add Item Section */}
-                        <div className="space-y-4 border-t pt-6">
-                            <h3 className="text-sm font-bold text-slate-700 flex items-center">
-                                <Tag className="h-4 w-4 mr-2 text-blue-500" /> Adicionar Serviços
+                        <div className="space-y-6 border-t pt-8">
+                            <h3 className="text-xl font-bold text-slate-700 flex items-center">
+                                <Tag className="h-6 w-6 mr-3 text-blue-500" /> Adicionar Serviços
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                                <div className="md:col-span-3 space-y-1.5">
-                                    <Label className="text-[10px] font-bold text-blue-600 uppercase">Serviço / Produto</Label>
+                            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
+                                <div className="md:col-span-3 space-y-2">
+                                    <Label className="text-[12px] font-bold text-blue-600 uppercase tracking-wider">Serviço / Produto</Label>
                                     <Select value={currentServiceId} onValueChange={handleServiceChange}>
-                                        <SelectTrigger className="bg-white">
+                                        <SelectTrigger className="bg-white h-14 text-base">
                                             <SelectValue placeholder="Escolha um item..." />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -202,51 +201,51 @@ export function BudgetDialog({ isOpen, onClose, client, services, team }: Budget
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold text-blue-600 uppercase">Qtd</Label>
+                                <div className="space-y-2">
+                                    <Label className="text-[12px] font-bold text-blue-600 uppercase tracking-wider">Qtd</Label>
                                     <Input
                                         type="number"
                                         value={currentQuantity}
                                         onChange={(e) => setCurrentQuantity(Number(e.target.value))}
-                                        className="bg-white"
+                                        className="bg-white h-14 text-lg text-center font-bold"
                                     />
                                 </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold text-blue-600 uppercase">Valor Un.</Label>
+                                <div className="space-y-2">
+                                    <Label className="text-[12px] font-bold text-blue-600 uppercase tracking-wider">Valor Un.</Label>
                                     <Input
                                         type="number"
                                         value={currentPrice}
                                         onChange={(e) => setCurrentPrice(Number(e.target.value))}
-                                        className="bg-white"
+                                        className="bg-white h-14 text-lg text-right font-bold"
                                     />
                                 </div>
-                                <Button onClick={addItem} className="bg-blue-600 hover:bg-blue-700 font-bold">
-                                    <Plus className="h-4 w-4 mr-1" /> INCLUIR
+                                <Button onClick={addItem} className="bg-blue-600 hover:bg-blue-700 font-bold h-14 text-base">
+                                    <Plus className="h-5 w-5 mr-1" /> INCLUIR
                                 </Button>
                             </div>
                         </div>
                     </div>
 
                     {/* Summary Sidebar */}
-                    <div className="w-full lg:w-[350px] bg-slate-50 border-l border-slate-200 flex flex-col">
-                        <div className="p-4 bg-slate-800 text-white font-bold flex items-center justify-between">
-                            <span className="flex items-center"><Calculator className="h-4 w-4 mr-2" /> Resumo</span>
-                            <span className="text-xs bg-white/20 px-2 py-0.5 rounded italic">{items.length} itens</span>
+                    <div className="w-full lg:w-[450px] bg-slate-50 border-l border-slate-200 flex flex-col">
+                        <div className="p-6 bg-slate-800 text-white font-bold flex items-center justify-between shrink-0">
+                            <span className="flex items-center text-lg"><Calculator className="h-6 w-6 mr-3" /> Resumo do Orçamento</span>
+                            <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">{items.length} itens</span>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-4 space-y-3">
                             {items.length > 0 ? items.map(item => (
-                                <div key={item.id} className="bg-white p-3 rounded-lg border shadow-sm group relative">
+                                <div key={item.id} className="bg-white p-5 rounded-xl border shadow-sm group relative">
                                     <button
                                         onClick={() => removeItem(item.id)}
-                                        className="absolute -top-1 -right-1 bg-red-100 text-red-600 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        className="absolute -top-2 -right-2 bg-red-100 text-red-600 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
                                     >
-                                        <Trash2 className="h-3 w-3" />
+                                        <Trash2 className="h-4 w-4" />
                                     </button>
-                                    <div className="text-xs font-bold text-slate-700 truncate">{item.serviceName}</div>
-                                    <div className="flex justify-between items-center mt-1">
-                                        <span className="text-[10px] text-slate-400 font-bold">{item.quantity}x R$ {Number(item.pricePerSession).toFixed(2)}</span>
-                                        <span className="text-xs font-black text-blue-600">R$ {Number(item.totalPrice).toFixed(2)}</span>
+                                    <div className="text-sm font-bold text-slate-700 truncate mb-2">{item.serviceName}</div>
+                                    <div className="flex justify-between items-center text-slate-500">
+                                        <span className="text-xs font-semibold">{item.quantity}x R$ {Number(item.pricePerSession).toFixed(2)}</span>
+                                        <span className="text-base font-black text-blue-600">R$ {Number(item.totalPrice).toFixed(2)}</span>
                                     </div>
                                 </div>
                             )) : (
@@ -257,16 +256,16 @@ export function BudgetDialog({ isOpen, onClose, client, services, team }: Budget
                             )}
                         </div>
 
-                        <div className="p-4 bg-white border-t border-slate-200">
-                            <div className="flex justify-between items-end mb-4">
-                                <span className="text-sm font-bold text-slate-500 uppercase tracking-tighter">Total Geral</span>
-                                <span className="text-2xl font-black text-slate-800">R$ {totalBudget.toFixed(2)}</span>
+                        <div className="p-6 bg-white border-t border-slate-200 shrink-0">
+                            <div className="flex justify-between items-end mb-6">
+                                <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Total Geral</span>
+                                <span className="text-4xl font-black text-slate-800 tracking-tighter">R$ {totalBudget.toFixed(2)}</span>
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <Button variant="outline" onClick={onClose} className="font-bold border-slate-300 text-slate-600">
+                            <div className="grid grid-cols-2 gap-4">
+                                <Button variant="outline" onClick={onClose} className="font-bold h-14 border-slate-300 text-slate-600 text-base">
                                     CANCELAR
                                 </Button>
-                                <Button onClick={handleSubmit} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-lg shadow-emerald-100">
+                                <Button onClick={handleSubmit} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 font-bold h-14 text-base shadow-lg shadow-emerald-100">
                                     {loading ? "SALVANDO..." : "FINALIZAR"}
                                 </Button>
                             </div>
