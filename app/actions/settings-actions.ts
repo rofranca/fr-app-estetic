@@ -53,6 +53,7 @@ export async function updateOrganization(data: {
         });
 
         revalidatePath('/settings');
+        revalidatePath('/agenda');
         return { success: true, organization: updated };
     } catch (error) {
         console.error("Error updating organization:", error);
