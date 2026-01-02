@@ -19,12 +19,16 @@ interface ClientSummaryDialogProps {
     isOpen: boolean;
     onClose: () => void;
     clientId: string;
+    allClients: any[];
     onEdit: (client: any) => void;
+    onSwitchClient: (clientId: string) => void;
 }
 
-export function ClientSummaryDialog({ isOpen, onClose, clientId, onEdit }: ClientSummaryDialogProps) {
+export function ClientSummaryDialog({ isOpen, onClose, clientId, allClients, onEdit, onSwitchClient }: ClientSummaryDialogProps) {
     const [client, setClient] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [showSearch, setShowSearch] = useState(false);
 
     useEffect(() => {
         if (isOpen && clientId) {
@@ -107,12 +111,46 @@ export function ClientSummaryDialog({ isOpen, onClose, clientId, onEdit }: Clien
                                 </div>
 
                                 <div className="w-[180px] space-y-2">
-                                    <Button variant="outline" size="sm" className="w-full text-xs font-bold" onClick={() => onEdit(client)}>
+                                    <Button variant="outline" size="sm" className="w-full text-xs font-bold border-blue-200 text-blue-700 hover:bg-blue-50" onClick={() => onEdit(client)}>
                                         <Edit3 className="h-3 w-3 mr-2" /> EDITAR CLIENTE
                                     </Button>
-                                    <Button variant="outline" size="sm" className="w-full text-xs font-bold">
-                                        <RotateCcw className="h-3 w-3 mr-2" /> TROCAR CLIENTE
-                                    </Button>
+                                    <div className="relative">
+                                        <Button variant="outline" size="sm" className="w-full text-xs font-bold border-slate-200 text-slate-600" onClick={() => setShowSearch(!showSearch)}>
+                                            <RotateCcw className="h-3 w-3 mr-2" /> TROCAR CLIENTE
+                                        </Button>
+
+                                        {showSearch && (
+                                            <div className="absolute right-0 top-full mt-2 w-[250px] bg-white border shadow-xl rounded-lg p-2 z-50">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Buscar cliente..."
+                                                    className="w-full p-2 text-sm border rounded mb-2 outline-none focus:ring-2 focus:ring-blue-500"
+                                                    autoFocus
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                />
+                                                <div className="max-h-[200px] overflow-auto">
+                                                    {allClients
+                                                        .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                                                        .slice(0, 10)
+                                                        .map(c => (
+                                                            <button
+                                                                key={c.id}
+                                                                className="w-full text-left p-2 text-sm hover:bg-slate-50 rounded truncate transition-colors"
+                                                                onClick={() => {
+                                                                    onSwitchClient(c.id);
+                                                                    setShowSearch(false);
+                                                                    setSearchQuery("");
+                                                                }}
+                                                            >
+                                                                {c.name}
+                                                            </button>
+                                                        ))
+                                                    }
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -120,25 +158,25 @@ export function ClientSummaryDialog({ isOpen, onClose, clientId, onEdit }: Clien
                         {/* Navigation Tabs */}
                         <Tabs defaultValue="resumo" className="flex-1 flex flex-col">
                             <TabsList className="bg-white border-b rounded-none h-auto p-0 flex justify-start px-6 gap-6 overflow-x-auto scrollbar-hide">
-                                <TabsTrigger value="resumo" className="rounded-none border-b-2 border-transparent data-[state=active]:border-red-500 data-[state=active]:text-red-500 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
+                                <TabsTrigger value="resumo" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
                                     <FileText className="h-4 w-4" /> Resumo
                                 </TabsTrigger>
-                                <TabsTrigger value="timeline" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
+                                <TabsTrigger value="timeline" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
                                     <Clock className="h-4 w-4" /> Linha do Tempo
                                 </TabsTrigger>
-                                <TabsTrigger value="anamnese" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
+                                <TabsTrigger value="anamnese" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
                                     <Paperclip className="h-4 w-4" /> Anamnese, Ficha e Contrato
                                 </TabsTrigger>
-                                <TabsTrigger value="budget" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
+                                <TabsTrigger value="budget" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
                                     <DollarSign className="h-3.5 w-3.5" /> Orçamento
                                 </TabsTrigger>
-                                <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
+                                <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
                                     <Paperclip className="h-4 w-4" /> Anexos
                                 </TabsTrigger>
-                                <TabsTrigger value="vendas" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
+                                <TabsTrigger value="vendas" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
                                     <ShoppingBag className="h-4 w-4" /> Vendas
                                 </TabsTrigger>
-                                <TabsTrigger value="agendamento" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
+                                <TabsTrigger value="agendamento" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
                                     <History className="h-4 w-4" /> Hist. Agendamento
                                 </TabsTrigger>
                             </TabsList>

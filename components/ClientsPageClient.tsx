@@ -378,10 +378,12 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
                 isOpen={isSummaryDialogOpen}
                 onClose={() => setIsSummaryDialogOpen(false)}
                 clientId={summaryClientId}
+                allClients={clients}
                 onEdit={(client) => {
                     setIsSummaryDialogOpen(false);
                     handleOpenDetail(client);
                 }}
+                onSwitchClient={(id) => setSummaryClientId(id)}
             />
         </div>
     );
