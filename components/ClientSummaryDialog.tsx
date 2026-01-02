@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,10 +11,16 @@ import { getClientFullProfile } from "@/app/actions/client-actions";
 import {
     User, Calendar, History, FileText, DollarSign, Paperclip,
     ShoppingBag, CheckCircle2, XCircle, AlertCircle, ExternalLink,
-    Phone, Mail, MessageCircle, Edit3, UserPlus, Clock, RotateCcw
+    Phone, Mail, MessageCircle, Edit3, UserPlus, Clock, RotateCcw,
+    Plus, Trash2
 } from "lucide-react";
 import { format, differenceInYears, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { BudgetDialog } from "./BudgetDialog";
+import { getServices } from "@/app/actions/service-actions";
+import { getTeam } from "@/app/actions/team-actions";
+import { deleteBudget, updateBudgetStatus } from "@/app/actions/budget-actions";
+import { toast } from "sonner";
 
 interface ClientSummaryDialogProps {
     isOpen: boolean;
@@ -29,6 +36,22 @@ export function ClientSummaryDialog({ isOpen, onClose, clientId, allClients, onE
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [showSearch, setShowSearch] = useState(false);
+    const [isBudgetDialogOpen, setIsBudgetDialogOpen] = useState(false);
+    const [services, setServices] = useState<any[]>([]);
+    const [team, setTeam] = useState<any[]>([]);
+
+    useEffect(() => {
+        loadInitialData();
+    }, []);
+
+    const loadInitialData = async () => {
+        const [servicesData, teamData] = await Promise.all([
+            getServices(),
+            getTeam()
+        ]);
+        setServices(servicesData);
+        setTeam(teamData);
+    };
 
     useEffect(() => {
         if (isOpen && clientId) {
@@ -162,9 +185,6 @@ export function ClientSummaryDialog({ isOpen, onClose, clientId, allClients, onE
                                 <TabsTrigger value="resumo" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
                                     <FileText className="h-4 w-4" /> Resumo
                                 </TabsTrigger>
-                                <TabsTrigger value="timeline" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
-                                    <Clock className="h-4 w-4" /> Linha do Tempo
-                                </TabsTrigger>
                                 <TabsTrigger value="anamnese" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent px-2 py-3 text-xs font-semibold flex items-center gap-1.5 transition-all">
                                     <Paperclip className="h-4 w-4" /> Anamnese, Ficha e Contrato
                                 </TabsTrigger>
@@ -268,35 +288,109 @@ export function ClientSummaryDialog({ isOpen, onClose, clientId, allClients, onE
                                     </div>
                                 </TabsContent>
 
-                                <TabsContent value="timeline" className="mt-0">
-                                    <div className="bg-white rounded-lg border p-6 min-h-[400px]">
-                                        <h3 className="text-lg font-bold text-slate-700 mb-6">Evolução do Prontuário</h3>
-                                        {client.records?.length > 0 ? (
-                                            <div className="relative border-l-2 border-blue-100 pl-8 ml-4 space-y-8">
-                                                {client.records.map((record: any) => (
-                                                    <div key={record.id} className="relative">
-                                                        <div className="absolute -left-[41px] top-0 bg-blue-600 rounded-full h-5 w-5 border-4 border-white shadow-sm" />
-                                                        <div className="space-y-1">
-                                                            <time className="text-xs font-bold text-blue-600 uppercase">{format(new Date(record.date), "dd 'de' MMMM, yyyy", { locale: ptBR })}</time>
-                                                            <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{record.content}</p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="text-center py-20 text-slate-400">Nenhum registro de evolução.</div>
-                                        )}
-                                    </div>
-                                </TabsContent>
+
 
                                 <TabsContent value="anamnese" className="mt-0 text-center py-20 bg-white rounded-lg border">
                                     <FileText className="h-12 w-12 text-slate-200 mx-auto mb-4" />
                                     <p className="text-slate-400">Módulo de Anamnese, Fichas e Contratos em desenvolvimento.</p>
                                 </TabsContent>
 
-                                <TabsContent value="budget" className="mt-0 text-center py-20 bg-white rounded-lg border">
-                                    <DollarSign className="h-12 w-12 text-slate-200 mx-auto mb-4" />
-                                    <p className="text-slate-400">Módulo de Orçamentos em desenvolvimento.</p>
+                                <TabsContent value="budget" className="mt-0">
+                                    <div className="bg-white rounded-lg border overflow-hidden">
+                                        <div className="p-4 bg-slate-50 border-b flex justify-between items-center">
+                                            <h3 className="text-sm font-bold text-slate-700">Orçamentos do Cliente</h3>
+                                            <Button size="sm" onClick={() => setIsBudgetDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700 font-bold text-xs">
+                                                <Plus className="h-3 w-3 mr-1" /> NOVO ORÇAMENTO
+                                            </Button>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-sm">
+                                                <thead className="bg-white border-b">
+                                                    <tr>
+                                                        <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-[10px]">Data/Validade</th>
+                                                        <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-[10px]">Nome/Profissional</th>
+                                                        <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-[10px]">Itens</th>
+                                                        <th className="px-6 py-3 text-right font-bold text-slate-500 uppercase tracking-wider text-[10px]">Valor Total</th>
+                                                        <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-[10px]">Status</th>
+                                                        <th className="px-6 py-3 text-right font-bold text-slate-500 uppercase tracking-wider text-[10px]">Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y">
+                                                    {client.budgets?.length > 0 ? client.budgets.map((b: any) => (
+                                                        <tr key={b.id} className="hover:bg-slate-50/50">
+                                                            <td className="px-6 py-4">
+                                                                <div className="text-slate-700 font-medium">{format(new Date(b.date), "dd/MM/yyyy")}</div>
+                                                                <div className="text-[10px] text-red-400 font-bold uppercase">Val: {b.validUntil ? format(new Date(b.validUntil), "dd/MM/yyyy") : "-"}</div>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <div className="text-slate-700 font-bold">{b.name}</div>
+                                                                <div className="text-[10px] text-slate-400 flex items-center">
+                                                                    <User className="h-2.5 w-2.5 mr-1" /> {b.user?.name}
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {b.items.map((item: any, idx: number) => (
+                                                                        <Badge key={idx} variant="outline" className="text-[9px] bg-slate-50 px-1 py-0 h-4">
+                                                                            {item.quantity}x {item.service?.name}
+                                                                        </Badge>
+                                                                    ))}
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-right">
+                                                                <div className="text-sm font-black text-blue-600">R$ {Number(b.totalAmount).toFixed(2)}</div>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-center">
+                                                                <Select
+                                                                    defaultValue={b.status}
+                                                                    onValueChange={async (val) => {
+                                                                        await updateBudgetStatus(b.id, val);
+                                                                        toast.success("Status atualizado");
+                                                                        loadProfile();
+                                                                    }}
+                                                                >
+                                                                    <SelectTrigger className={`h-7 text-[10px] font-bold uppercase w-[110px] ${b.status === "APROVADO" ? "bg-emerald-50 border-emerald-200 text-emerald-700" :
+                                                                        b.status === "REPROVADO" ? "bg-red-50 border-red-200 text-red-700" :
+                                                                            "bg-blue-50 border-blue-200 text-blue-700"
+                                                                        }`}>
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="PENDENTE">Pendente</SelectItem>
+                                                                        <SelectItem value="APROVADO">Aprovado</SelectItem>
+                                                                        <SelectItem value="REPROVADO">Reprovado</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-right">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-slate-400 hover:text-red-500"
+                                                                    onClick={async () => {
+                                                                        if (confirm("Deseja excluir este orçamento?")) {
+                                                                            await deleteBudget(b.id);
+                                                                            toast.success("Orçamento excluído");
+                                                                            loadProfile();
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </td>
+                                                        </tr>
+                                                    )) : (
+                                                        <tr>
+                                                            <td colSpan={6} className="px-6 py-20 text-center text-slate-400">
+                                                                <DollarSign className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                                                                Nenhum orçamento registrado para este cliente.
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </TabsContent>
 
                                 <TabsContent value="attachments" className="mt-0 text-center py-20 bg-white rounded-lg border">
@@ -369,6 +463,17 @@ export function ClientSummaryDialog({ isOpen, onClose, clientId, allClients, onE
                                 </TabsContent>
                             </div>
                         </Tabs>
+
+                        <BudgetDialog
+                            isOpen={isBudgetDialogOpen}
+                            onClose={() => {
+                                setIsBudgetDialogOpen(false);
+                                loadProfile();
+                            }}
+                            client={{ id: client.id, name: client.name }}
+                            services={services}
+                            team={team}
+                        />
                     </>
                 )}
             </DialogContent>

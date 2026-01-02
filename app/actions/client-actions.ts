@@ -142,6 +142,10 @@ export async function getClientFullProfile(id: string) {
                 },
                 transactions: {
                     orderBy: { createdAt: 'desc' }
+                },
+                budgets: {
+                    include: { items: { include: { service: true } }, user: true },
+                    orderBy: { createdAt: 'desc' }
                 }
             }
         });
