@@ -56,7 +56,7 @@ export function ClientSummaryDialog({ isOpen, onClose, clientId, allClients, onE
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-[1200px] w-[95vw] h-[90vh] flex flex-col p-0 overflow-hidden bg-[#f8fafc]">
+            <DialogContent className="max-w-[95vw] sm:max-w-[1400px] w-full h-[95vh] flex flex-col p-0 gap-0 overflow-hidden bg-[#f8fafc] border-none shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
                 {loading ? (
                     <div className="flex-1 flex items-center justify-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -64,79 +64,80 @@ export function ClientSummaryDialog({ isOpen, onClose, clientId, allClients, onE
                 ) : client && (
                     <>
                         {/* Header Section */}
-                        <div className="bg-white border-b p-6 flex items-start justify-between">
-                            <div className="flex gap-6">
-                                <div className="space-y-1">
-                                    <h2 className="text-2xl font-bold text-slate-700">{client.name}</h2>
-                                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
-                                        {age !== null && (
-                                            <div className="flex items-center">
-                                                <User className="h-3 w-3 mr-1" />
-                                                {age} anos ({birthdayStr})
-                                            </div>
-                                        )}
-                                        <div className="flex items-center">
-                                            <Phone className="h-3 w-3 mr-1" />
-                                            {client.phone}
-                                            <a
-                                                href={`https://wa.me/${client.phone?.replace(/\D/g, '')}`}
-                                                target="_blank"
-                                                className="ml-2 text-emerald-600 hover:underline flex items-center font-medium"
-                                            >
-                                                <MessageCircle className="h-3 w-3 mr-1" /> WhatsApp
-                                            </a>
+                        <div className="bg-white border-b p-6 flex flex-col lg:flex-row items-start justify-between gap-6">
+                            <div className="flex-1 space-y-2">
+                                <h2 className="text-3xl font-bold text-slate-800 leading-tight">{client.name}</h2>
+                                <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500">
+                                    {age !== null && (
+                                        <div className="flex items-center bg-slate-50 px-2 py-1 rounded border">
+                                            <User className="h-3.5 w-3.5 mr-2 text-blue-500" />
+                                            <span className="font-semibold">{age} anos</span>
+                                            <span className="ml-1 opacity-70">({birthdayStr})</span>
                                         </div>
-                                        {client.email && (
-                                            <div className="flex items-center">
-                                                <Mail className="h-3 w-3 mr-1" />
-                                                {client.email}
-                                            </div>
-                                        )}
+                                    )}
+                                    <div className="flex items-center bg-slate-50 px-2 py-1 rounded border">
+                                        <Phone className="h-3.5 w-3.5 mr-2 text-blue-500" />
+                                        <span className="font-semibold">{client.phone}</span>
+                                        <a
+                                            href={`https://wa.me/${client.phone?.replace(/\D/g, '')}`}
+                                            target="_blank"
+                                            className="ml-3 text-emerald-600 hover:text-emerald-700 flex items-center font-bold"
+                                        >
+                                            <MessageCircle className="h-3.5 w-3.5 mr-1" /> WhatsApp
+                                        </a>
                                     </div>
+                                    {client.email && (
+                                        <div className="flex items-center bg-slate-50 px-2 py-1 rounded border">
+                                            <Mail className="h-3.5 w-3.5 mr-2 text-blue-500" />
+                                            <span className="font-medium">{client.email}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            <div className="flex gap-4">
-                                <div className="bg-slate-50 border rounded-lg p-3 text-center min-w-[80px]">
-                                    <div className="text-2xl font-bold text-blue-600">{stats.atendidos}</div>
-                                    <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Atendidos</div>
-                                </div>
-                                <div className="bg-slate-50 border rounded-lg p-3 text-center min-w-[80px]">
-                                    <div className="text-2xl font-bold text-slate-600">{stats.faltas}</div>
-                                    <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Faltas</div>
-                                </div>
-                                <div className="bg-slate-50 border rounded-lg p-3 text-center min-w-[80px]">
-                                    <div className="text-2xl font-bold text-slate-600">{stats.cancelados}</div>
-                                    <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Cancelados</div>
+                            <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+                                <div className="flex gap-3">
+                                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center min-w-[90px] shadow-sm">
+                                        <div className="text-2xl font-black text-blue-600">{stats.atendidos}</div>
+                                        <div className="text-[10px] text-blue-400 uppercase font-black tracking-widest">Atendidos</div>
+                                    </div>
+                                    <div className="bg-orange-50 border border-orange-100 rounded-xl p-3 text-center min-w-[90px] shadow-sm">
+                                        <div className="text-2xl font-black text-orange-600">{stats.faltas}</div>
+                                        <div className="text-[10px] text-orange-400 uppercase font-black tracking-widest">Faltas</div>
+                                    </div>
+                                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center min-w-[90px] shadow-sm">
+                                        <div className="text-2xl font-black text-slate-500">{stats.cancelados}</div>
+                                        <div className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Cancelados</div>
+                                    </div>
                                 </div>
 
-                                <div className="w-[180px] space-y-2">
-                                    <Button variant="outline" size="sm" className="w-full text-xs font-bold border-blue-200 text-blue-700 hover:bg-blue-50" onClick={() => onEdit(client)}>
-                                        <Edit3 className="h-3 w-3 mr-2" /> EDITAR CLIENTE
+                                <div className="flex flex-col gap-2 min-w-[180px]">
+                                    <Button variant="outline" size="sm" className="w-full text-xs font-bold border-blue-200 text-blue-700 hover:bg-blue-600 hover:text-white transition-all shadow-sm" onClick={() => onEdit(client)}>
+                                        <Edit3 className="h-3.5 w-3.5 mr-2" /> EDITAR CLIENTE
                                     </Button>
                                     <div className="relative">
-                                        <Button variant="outline" size="sm" className="w-full text-xs font-bold border-slate-200 text-slate-600" onClick={() => setShowSearch(!showSearch)}>
-                                            <RotateCcw className="h-3 w-3 mr-2" /> TROCAR CLIENTE
+                                        <Button variant="outline" size="sm" className="w-full text-xs font-bold border-slate-200 text-slate-600 hover:bg-slate-100 transition-all shadow-sm" onClick={() => setShowSearch(!showSearch)}>
+                                            <RotateCcw className="h-3.5 w-3.5 mr-2" /> TROCAR CLIENTE
                                         </Button>
 
                                         {showSearch && (
-                                            <div className="absolute right-0 top-full mt-2 w-[250px] bg-white border shadow-xl rounded-lg p-2 z-50">
+                                            <div className="absolute right-0 top-full mt-2 w-[300px] bg-white border shadow-2xl rounded-xl p-3 z-50 animate-in fade-in zoom-in duration-200">
                                                 <input
                                                     type="text"
-                                                    placeholder="Buscar cliente..."
-                                                    className="w-full p-2 text-sm border rounded mb-2 outline-none focus:ring-2 focus:ring-blue-500"
+                                                    placeholder="Buscar cliente por nome..."
+                                                    className="w-full p-2.5 text-sm border rounded-lg mb-3 outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
                                                     autoFocus
                                                     value={searchQuery}
                                                     onChange={(e) => setSearchQuery(e.target.value)}
                                                 />
-                                                <div className="max-h-[200px] overflow-auto">
+                                                <div className="max-h-[250px] overflow-auto custom-scrollbar">
                                                     {allClients
                                                         .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
                                                         .slice(0, 10)
                                                         .map(c => (
                                                             <button
                                                                 key={c.id}
-                                                                className="w-full text-left p-2 text-sm hover:bg-slate-50 rounded truncate transition-colors"
+                                                                className="w-full text-left p-3 text-sm hover:bg-blue-50 rounded-lg truncate transition-colors border-b last:border-0 font-medium text-slate-700"
                                                                 onClick={() => {
                                                                     onSwitchClient(c.id);
                                                                     setShowSearch(false);
