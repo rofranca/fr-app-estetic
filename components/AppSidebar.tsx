@@ -19,7 +19,8 @@ import {
     BarChart3,
     Activity,
     Wallet,
-    Calculator
+    Calculator,
+    ShoppingCart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -56,6 +57,12 @@ const routes = [
         icon: Calculator,
         href: "/budgets",
         color: "text-blue-500",
+    },
+    {
+        label: "Vendas",
+        icon: ShoppingCart,
+        href: "/sales",
+        color: "text-green-600",
     },
     {
         label: "Serviços",
