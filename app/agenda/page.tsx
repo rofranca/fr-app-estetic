@@ -1,13 +1,30 @@
 import CalendarClient from "@/components/CalendarClient";
-import { getAppointments, getClients, getServices, getProfessionals } from "../actions/appointment-actions";
+import { getAppointments, getClients, getServices, getProfessionals, getCalendarBlocks } from "../actions/appointment-actions";
+import { getOrganization } from "../actions/settings-actions";
 
 export default async function AgendaPage() {
-    const [initialEvents, clients, services, professionals] = await Promise.all([
+    const [initialEvents, clients, services, professionals, orgResult, blocks] = await Promise.all([
         getAppointments(),
         getClients(),
         getServices(),
-        getProfessionals()
+        getProfessionals(),
+        getOrganization(),
+        getCalendarBlocks()
     ]);
+
+    // Merge blocks into events
+    const allEvents = [...initialEvents, ...blocks];
+
+    // Prepare config
+    const org = orgResult.organization;
+    const slotDurationMinutes = org?.slotDuration || 30;
+    const slotDuration = `00:${slotDurationMinutes < 10 ? '0' : ''}${slotDurationMinutes}:00`;
+
+    const config = {
+        slotDuration,
+        slotMinTime: org?.startTime ? `${org.startTime}` : "08:00",
+        slotMaxTime: org?.endTime ? `${org.endTime}` : "20:00"
+    };
 
     return (
         <div className="h-[calc(100vh-80px)] p-6">
@@ -17,10 +34,11 @@ export default async function AgendaPage() {
             </div>
             <div className="h-full border rounded-lg overflow-hidden">
                 <CalendarClient
-                    initialEvents={initialEvents}
+                    initialEvents={allEvents}
                     clients={clients}
                     services={services}
                     professionals={professionals}
+                    config={config}
                 />
             </div>
         </div>

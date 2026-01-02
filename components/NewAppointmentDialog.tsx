@@ -152,7 +152,7 @@ export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, s
                             Cliente
                         </Label>
                         <div className="col-span-3">
-                            <Popover open={openClient} onOpenChange={setOpenClient}>
+                            <Popover open={openClient} onOpenChange={setOpenClient} modal={true}>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"

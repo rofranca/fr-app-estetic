@@ -29,6 +29,9 @@ export async function updateOrganization(data: {
     email?: string;
     phone?: string;
     address?: string;
+    slotDuration?: number;
+    startTime?: string;
+    endTime?: string;
 }) {
     try {
         const org = await prisma.organization.findFirst();
@@ -42,7 +45,10 @@ export async function updateOrganization(data: {
                 cnpj: data.cnpj,
                 email: data.email,
                 phone: data.phone,
-                address: data.address
+                address: data.address,
+                slotDuration: data.slotDuration,
+                startTime: data.startTime,
+                endTime: data.endTime
             }
         });
 

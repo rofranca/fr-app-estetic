@@ -290,3 +290,39 @@ export async function getProfessionals() {
         select: { id: true, name: true }
     })
 }
+
+
+// Blocks
+export async function createCalendarBlock(data: { startTime: Date, endTime: Date, reason?: string }) {
+    try {
+        await prisma.calendarBlock.create({
+            data: {
+                startTime: data.startTime,
+                endTime: data.endTime,
+                reason: data.reason
+            }
+        });
+        revalidatePath('/agenda');
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: "Falha ao bloquear horário" };
+    }
+}
+
+export async function getCalendarBlocks() {
+    try {
+        const blocks = await prisma.calendarBlock.findMany();
+        return blocks.map(block => ({
+            id: block.id,
+            title: block.reason || "Bloqueado",
+            start: block.startTime,
+            end: block.endTime,
+            display: 'background',
+            color: '#ef4444', // Red background
+            overlap: false
+        }));
+    } catch (error) {
+        return [];
+    }
+}
+

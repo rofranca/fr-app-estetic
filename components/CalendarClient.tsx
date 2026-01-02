@@ -8,27 +8,35 @@ import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import ptBrLocale from "@fullcalendar/core/locales/pt-br";
 import { Button } from "@/components/ui/button";
-import { Plus, RotateCcw } from "lucide-react";
+
 import { useRouter } from "next/navigation";
 import { updateAppointmentTime } from "@/app/actions/appointment-actions";
 import { toast } from "sonner";
 
 import { NewAppointmentDialog } from "./NewAppointmentDialog";
 import { AppointmentDetailsDialog } from "./AppointmentDetailsDialog";
+import { BlockDialog } from "./BlockDialog";
+import { Plus, RotateCcw, Lock } from "lucide-react";
 
 interface CalendarClientProps {
     initialEvents: any[];
     clients: { id: string, name: string }[];
     services: { id: string, name: string }[];
     professionals: { id: string, name: string }[];
+    config?: {
+        slotDuration: string;  // "00:05:00"
+        slotMinTime: string;   // "08:00:00"
+        slotMaxTime: string;   // "20:00:00"
+    };
 }
 
-export default function CalendarClient({ initialEvents, clients, services, professionals }: CalendarClientProps) {
+export default function CalendarClient({ initialEvents, clients, services, professionals, config }: CalendarClientProps) {
     const [events, setEvents] = useState(initialEvents);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    const [isBlockDialogOpen, setIsBlockDialogOpen] = useState(false);
     const router = useRouter();
 
     // Auto-refresh every 30 seconds
@@ -76,6 +84,9 @@ export default function CalendarClient({ initialEvents, clients, services, profe
                 <Button variant="outline" size="sm" onClick={() => router.refresh()}>
                     <RotateCcw className="mr-2 h-4 w-4" /> Atualizar Agenda
                 </Button>
+                <Button variant="destructive" size="sm" onClick={() => setIsBlockDialogOpen(true)} className="ml-2">
+                    <Lock className="mr-2 h-4 w-4" /> Bloquear Horário
+                </Button>
             </div>
 
             <div className="flex-1">
@@ -95,8 +106,9 @@ export default function CalendarClient({ initialEvents, clients, services, profe
                     dateClick={handleDateClick}
                     eventClick={handleEventClick}
                     eventDrop={handleEventDrop}
-                    slotMinTime="08:00:00"
-                    slotMaxTime="20:00:00"
+                    slotDuration={config?.slotDuration || "00:30:00"}
+                    slotMinTime={config?.slotMinTime ? `${config.slotMinTime}:00` : "08:00:00"}
+                    slotMaxTime={config?.slotMaxTime ? `${config.slotMaxTime}:00` : "20:00:00"}
                     allDaySlot={false}
                     height="100%"
                     buttonText={{
@@ -119,6 +131,11 @@ export default function CalendarClient({ initialEvents, clients, services, profe
                     isOpen={isDetailsOpen}
                     onClose={() => setIsDetailsOpen(false)}
                     appointment={selectedEvent}
+                />
+                <BlockDialog
+                    isOpen={isBlockDialogOpen}
+                    onClose={() => setIsBlockDialogOpen(false)}
+                    defaultDate={selectedDate || new Date()}
                 />
             </div>
         </div>
