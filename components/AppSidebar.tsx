@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
+import { handleSignOut } from "@/app/lib/actions";
 
 const routes = [
     {
@@ -91,10 +92,12 @@ export function AppSidebar() {
                 </div>
             </div>
             <div className="px-3 py-2">
-                {/* Logout or User info at bottom */}
-                <div className="text-zinc-400 text-xs text-center">
-                    v1.0.0
-                </div>
+                <form action={handleSignOut}>
+                    <button className="flex items-center w-full p-3 text-red-400 hover:text-red-300 hover:bg-white/10 rounded-lg transition text-sm font-medium cursor-pointer">
+                        <LogOut className="h-5 w-5 mr-3" />
+                        Sair do Sistema
+                    </button>
+                </form>
             </div>
         </div>
     );
