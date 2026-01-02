@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { createTransaction } from "@/app/actions/financial-actions";
-import { FileText, Save, DollarSign, Calendar, Tag, Wallet, CreditCard, PenTool } from "lucide-center";
+import { FileText, Save, DollarSign, Calendar, Tag, Wallet, CreditCard, PenTool } from "lucide-react";
 
 interface TransactionDialogProps {
     isOpen: boolean;
