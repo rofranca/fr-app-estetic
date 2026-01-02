@@ -13,6 +13,7 @@ export async function getTeam() {
                 name: true,
                 email: true,
                 role: true,
+                permissions: true,
                 createdAt: true,
             }
         });
@@ -28,6 +29,7 @@ export async function createTeamMember(data: {
     email: string;
     password?: string;
     role?: string;
+    permissions?: string[];
 }) {
     try {
         const hashedPassword = await bcrypt.hash(data.password || "changeme123", 10);
@@ -38,6 +40,7 @@ export async function createTeamMember(data: {
                 email: data.email,
                 password: hashedPassword,
                 role: data.role || "PROFESSIONAL",
+                permissions: data.permissions || [],
             },
         });
         revalidatePath("/team");
@@ -52,11 +55,17 @@ export async function updateTeamMember(id: string, data: {
     name: string;
     email: string;
     role: string;
+    permissions?: string[];
 }) {
     try {
         await prisma.user.update({
             where: { id },
-            data,
+            data: {
+                name: data.name,
+                email: data.email,
+                role: data.role,
+                permissions: data.permissions || [],
+            },
         });
         revalidatePath("/team");
         return { success: true };

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState } from "react";
 import { Plus, Pencil, Trash2, UserCircle } from "lucide-react";
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { createTeamMember, updateTeamMember, deleteTeamMember } from "@/app/actions/team-actions";
 
@@ -17,15 +18,25 @@ interface TeamMember {
     name: string;
     email: string;
     role: string;
+    permissions: string[];
     createdAt: Date;
 }
 
 interface TeamPageClientProps {
-    initialTeam: TeamMember[];
+    initialTeam: any[];
 }
 
+const AVAILABLE_PERMISSIONS = [
+    { id: "calendar", label: "Agenda" },
+    { id: "financial", label: "Financeiro" },
+    { id: "clients", label: "Clientes" },
+    { id: "sales", label: "Vendas e Orçamentos" },
+    { id: "reports", label: "Relatórios" },
+    { id: "settings", label: "Configurações" },
+];
+
 export default function TeamPageClient({ initialTeam }: TeamPageClientProps) {
-    const [team, setTeam] = useState(initialTeam);
+    const [team, setTeam] = useState<TeamMember[]>(initialTeam as TeamMember[]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
 
@@ -33,12 +44,14 @@ export default function TeamPageClient({ initialTeam }: TeamPageClientProps) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [role, setRole] = useState("PROFESSIONAL");
+    const [permissions, setPermissions] = useState<string[]>([]);
 
     const resetForm = () => {
         setName("");
         setEmail("");
         setPassword("");
         setRole("PROFESSIONAL");
+        setPermissions([]);
         setEditingMember(null);
     };
 
@@ -48,6 +61,7 @@ export default function TeamPageClient({ initialTeam }: TeamPageClientProps) {
             setName(member.name);
             setEmail(member.email);
             setRole(member.role);
+            setPermissions(member.permissions || []);
             setPassword(""); // Don't show password on edit
         } else {
             resetForm();
@@ -55,20 +69,32 @@ export default function TeamPageClient({ initialTeam }: TeamPageClientProps) {
         setIsDialogOpen(true);
     };
 
+    const handlePermissionToggle = (permId: string) => {
+        setPermissions(current =>
+            current.includes(permId)
+                ? current.filter(p => p !== permId)
+                : [...current, permId]
+        );
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // If ADMIN, force all permissions implicitly or explicitly
+        // Logic handled in Backend, but for UI consistency let's just send what we have.
+        // Actually, if role is ADMIN, backend/sidebar logic grants full access regardless of permissions array.
+
         if (editingMember) {
-            const res = await updateTeamMember(editingMember.id, { name, email, role });
+            const res = await updateTeamMember(editingMember.id, { name, email, role, permissions });
             if (res.success) {
-                setTeam(team.map(m => m.id === editingMember.id ? { ...m, name, email, role } : m));
+                setTeam(team.map(m => m.id === editingMember.id ? { ...m, name, email, role, permissions } : m));
                 toast.success("Membro atualizado!");
                 setIsDialogOpen(false);
             } else {
                 toast.error(res.error);
             }
         } else {
-            const res = await createTeamMember({ name, email, password, role });
+            const res = await createTeamMember({ name, email, password, role, permissions });
             if (res.success) {
                 toast.success("Membro criado!");
                 window.location.reload();
@@ -124,8 +150,9 @@ export default function TeamPageClient({ initialTeam }: TeamPageClientProps) {
                                     </TableCell>
                                     <TableCell>{member.email}</TableCell>
                                     <TableCell>
-                                        <span className="px-2 py-1 bg-violet-100 text-violet-700 rounded text-xs font-semibold">
-                                            {member.role}
+                                        <span className="px-2 py-1 bg-violet-100 text-violet-700 rounded text-xs font-semibold mr-2">
+                                            {member.role === 'ADMIN' ? 'Administrador' :
+                                                member.role === 'RECEPTIONIST' ? 'Recepcionista' : 'Profissional'}
                                         </span>
                                     </TableCell>
                                     <TableCell className="text-right space-x-2">
@@ -144,38 +171,66 @@ export default function TeamPageClient({ initialTeam }: TeamPageClientProps) {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>{editingMember ? "Editar Membro" : "Novo Membro da Equipe"}</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Nome Completo</Label>
-                            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Dra. Ana Paula" required />
+                    <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Nome Completo</Label>
+                                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Dra. Ana Paula" required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email de Acesso</Label>
+                                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ana@estetica.com" required />
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email de Acesso</Label>
-                            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ana@estetica.com" required />
-                        </div>
+
                         {!editingMember && (
                             <div className="space-y-2">
                                 <Label htmlFor="password">Senha Inicial</Label>
                                 <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" required />
                             </div>
                         )}
+
                         <div className="space-y-2">
-                            <Label htmlFor="role">Permissão</Label>
+                            <Label htmlFor="role">Cargo</Label>
                             <Select value={role} onValueChange={setRole}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Selecione o cargo" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="ADMIN">Administrador</SelectItem>
+                                    <SelectItem value="ADMIN">Administrador (Acesso Total)</SelectItem>
                                     <SelectItem value="PROFESSIONAL">Profissional / Esteticista</SelectItem>
                                     <SelectItem value="RECEPTIONIST">Recepcionista</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {role !== 'ADMIN' && (
+                            <div className="space-y-3 border rounded-lg p-4 bg-slate-50">
+                                <Label>Permissões de Acesso</Label>
+                                <div className="grid grid-cols-2 gap-4 pt-2">
+                                    {AVAILABLE_PERMISSIONS.map((perm) => (
+                                        <div key={perm.id} className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={`perm-${perm.id}`}
+                                                checked={permissions.includes(perm.id)}
+                                                onCheckedChange={() => handlePermissionToggle(perm.id)}
+                                            />
+                                            <Label htmlFor={`perm-${perm.id}`} className="font-normal cursor-pointer">
+                                                {perm.label}
+                                            </Label>
+                                        </div>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    Selecione quais áreas do sistema este usuário poderá acessar no menu lateral.
+                                </p>
+                            </div>
+                        )}
+
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
                             <Button type="submit">{editingMember ? "Salvar Alterações" : "Criar Acesso"}</Button>

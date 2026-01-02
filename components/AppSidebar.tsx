@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -155,6 +156,47 @@ function SidebarItem({ route, pathname }: { route: any, pathname: string }) {
 
 export function AppSidebar() {
     const pathname = usePathname();
+    const { data: session } = useSession();
+
+    // Mapping of labels to required permissions
+    // If permission is missing, it is restricted.
+    // 'Dashboard' is always visible but subitems depend on permissions.
+    const permissionMap: Record<string, string> = {
+        "Agenda": "calendar",
+        "Clientes": "clients",
+        "Orçamentos": "sales", // Budget is part of sales
+        "Vendas": "sales",
+        "Serviços": "settings", // Services usually admin/settings
+        "Financeiro": "financial",
+        "Relatórios": "reports",
+        "Equipe": "settings",
+        "Configurações": "settings",
+    };
+
+    const isAdmin = session?.user?.role === 'ADMIN';
+    const userPermissions = session?.user?.permissions || [];
+
+    const filteredRoutes = routes.filter(route => {
+        if (isAdmin) return true;
+
+        const requiredPermission = permissionMap[route.label];
+        if (!requiredPermission) return true; // Public/Common routes like Dashboard root
+
+        return userPermissions.includes(requiredPermission);
+    }).map(route => {
+        // Filter subItems if needed
+        if (route.subItems) {
+            return {
+                ...route,
+                subItems: route.subItems.filter(sub => {
+                    // specific sub-route logic or inherit parent
+                    // For now, if parent is allowed, subitems are allowed unless specified
+                    return true;
+                })
+            }
+        }
+        return route;
+    });
 
     return (
         <div className="space-y-4 py-4 flex flex-col h-full bg-[#111827] text-white">
@@ -169,7 +211,7 @@ export function AppSidebar() {
                     </h1>
                 </Link>
                 <div className="space-y-1">
-                    {routes.map((route) => (
+                    {filteredRoutes.map((route) => (
                         <SidebarItem key={route.href} route={route} pathname={pathname} />
                     ))}
                 </div>

@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Header } from "@/components/Header";
 
+import { Providers } from "@/components/Providers";
 import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -21,16 +22,18 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        <div className="h-full relative">
-          <div className="hidden h-full md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 z-[80] bg-gray-900">
-            <AppSidebar />
+        <Providers>
+          <div className="h-full relative">
+            <div className="hidden h-full md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 z-[80] bg-gray-900">
+              <AppSidebar />
+            </div>
+            <main className="md:pl-72">
+              <Header />
+              {children}
+              <Toaster />
+            </main>
           </div>
-          <main className="md:pl-72">
-            <Header />
-            {children}
-            <Toaster />
-          </main>
-        </div>
+        </Providers>
       </body>
     </html>
   );

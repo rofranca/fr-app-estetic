@@ -25,6 +25,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   commissionRate Decimal @default(0) // Taxa de comissão (%)
+  permissions   String[] @default([]) // Access Control List
   
   appointments Appointment[]
   budgets      Budget[]
