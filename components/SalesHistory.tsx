@@ -30,9 +30,10 @@ interface SalesHistoryProps {
         count: number;
         ticket: number;
     };
+    organization?: any; // Added prop
 }
 
-export function SalesHistory({ sales, summary }: SalesHistoryProps) {
+export function SalesHistory({ sales, summary, organization }: SalesHistoryProps) {
     const [searchTerm, setSearchTerm] = useState("");
 
     const filteredSales = sales.filter(sale =>
@@ -124,7 +125,7 @@ export function SalesHistory({ sales, summary }: SalesHistoryProps) {
                                             size="sm"
                                             variant="ghost"
                                             className="h-8 hover:bg-slate-50 text-slate-600 rounded-lg"
-                                            onClick={() => generateReceipt(sale)}
+                                            onClick={() => generateReceipt(sale, organization)}
                                         >
                                             <Printer className="h-3.5 w-3.5 mr-2" /> Recibo
                                         </Button>

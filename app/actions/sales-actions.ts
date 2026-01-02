@@ -138,6 +138,31 @@ export async function createSale(data: CreateSaleData) {
             }
         });
 
+        // Create packages for services that have duration > 0 (assuming services are packages)
+        // Or check if we should always create a package for each item
+        for (const item of data.items) {
+            const service = await prisma.service.findUnique({ where: { id: item.serviceId } });
+            if (service) {
+                // If quantity > 1, we might want to create a package with X sessions
+                // Or create X packages. Usually it's one package with Total Sessions = quantity
+                // Assuming "quantity" in cart means "Number of Sessions" mostly, 
+                // OR "Number of Packages". 
+                // Let's assume quantity = sessions for now as per typical aesthetic app logic
+                // Actually, if I sell "Botox", quantity 1 = 1 session.
+
+                await prisma.package.create({
+                    data: {
+                        clientId: data.clientId,
+                        serviceId: item.serviceId,
+                        totalSessions: item.quantity,
+                        remainingSessions: item.quantity,
+                        price: service.price,
+                        status: "ACTIVE"
+                    }
+                });
+            }
+        }
+
         // Get open cash register
         const openRegister = await prisma.cashRegister.findFirst({
             where: { userId: user.id, status: "OPEN" }
@@ -148,18 +173,23 @@ export async function createSale(data: CreateSaleData) {
         const transactions = [];
 
         // Get the current day of month for the sale
-        const saleDate = new Date();
-        const dayOfMonth = saleDate.getDate();
+        const saleDate = new Date(); // Normalized to today? No, just now.
 
         for (let i = 0; i < data.installments; i++) {
             // Calculate due date: same day of month, i months from now
+            // We use a fresh date object from saleDate for each iteration to avoid mutation issues
             const dueDate = new Date(saleDate);
+
+            // Explicitly add months
             dueDate.setMonth(dueDate.getMonth() + i);
 
-            // Handle edge case: if original day doesn't exist in target month (e.g., Jan 31 -> Feb 31)
-            // JavaScript will automatically adjust to the last day of the month
-            if (dueDate.getDate() !== dayOfMonth) {
-                // Set to last day of the month
+            // Verify if due date rolled over incorrectly (e.g. Jan 31 -> Feb 28/29)
+            // The logic setMonth handles this by overflowing, but we might want to stick to end of month
+            // JS setMonth(currentMonth + 1) on Jan 31 results in March 3rd (approx).
+            // We want Feb 28.
+            const targetMonth = (saleDate.getMonth() + i) % 12;
+            if (dueDate.getMonth() !== targetMonth) {
+                // If month mismatch, it means overflow happened. Set to last day of previous month within that year.
                 dueDate.setDate(0);
             }
 

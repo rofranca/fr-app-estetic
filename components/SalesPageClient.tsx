@@ -29,6 +29,8 @@ import { createSale } from "@/app/actions/sales-actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SalesHistory } from "@/components/SalesHistory";
 
+import { NewClientDialog } from "./NewClientDialog";
+
 interface SalesPageClientProps {
     clients: any[];
     services: any[];
@@ -37,6 +39,7 @@ interface SalesPageClientProps {
     team: any[];
     todaySales: any[];
     todaySummary: any;
+    organization: any;
 }
 
 interface CartItem {
@@ -55,7 +58,8 @@ export default function SalesPageClient({
     accounts,
     team,
     todaySales,
-    todaySummary
+    todaySummary,
+    organization
 }: SalesPageClientProps) {
     const [selectedClientId, setSelectedClientId] = useState("");
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -208,7 +212,7 @@ export default function SalesPageClient({
                     <p className="text-sm text-slate-500 mt-1 font-medium">Registre vendas e gere lançamentos financeiros automaticamente</p>
                 </div>
                 <div className="flex space-x-3">
-                    <SalesHistory sales={todaySales} summary={todaySummary} />
+                    <SalesHistory sales={todaySales} summary={todaySummary} organization={organization} />
                     <Button variant="outline" onClick={clearSale} className="h-12 px-6 rounded-2xl font-bold border-slate-200">
                         <X className="mr-2 h-5 w-5" /> LIMPAR TUDO
                     </Button>
@@ -225,7 +229,10 @@ export default function SalesPageClient({
                     </CardHeader>
                     <CardContent className="p-6 space-y-6">
                         <div className="space-y-3">
-                            <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Buscar Cliente</Label>
+                            <div className="flex justify-between items-center">
+                                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Buscar Cliente</Label>
+                                <NewClientDialog />
+                            </div>
                             <Input
                                 placeholder="Nome, telefone ou email..."
                                 value={searchTerm}
@@ -238,17 +245,21 @@ export default function SalesPageClient({
                             <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Selecionar</Label>
                             <Select value={selectedClientId} onValueChange={setSelectedClientId}>
                                 <SelectTrigger className="h-12 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 bg-slate-50/50 rounded-xl transition-all font-bold text-slate-700">
-                                    <SelectValue placeholder="Escolha o cliente..." />
+                                    <SelectValue placeholder={searchTerm ? "Selecione na lista..." : "Busque primeiro..."} />
                                 </SelectTrigger>
                                 <SelectContent className="z-[200] rounded-xl max-h-[300px]">
-                                    {filteredClients.map(client => (
-                                        <SelectItem key={client.id} value={client.id}>
-                                            <div className="flex flex-col">
-                                                <span className="font-bold">{client.name}</span>
-                                                <span className="text-xs text-slate-400">{client.phone || client.email}</span>
-                                            </div>
-                                        </SelectItem>
-                                    ))}
+                                    {filteredClients.length > 0 ? (
+                                        filteredClients.slice(0, 50).map(client => (
+                                            <SelectItem key={client.id} value={client.id}>
+                                                <div className="flex flex-col text-left">
+                                                    <span className="font-bold">{client.name}</span>
+                                                    <span className="text-xs text-slate-400">{client.phone || client.email || "Sem contato"}</span>
+                                                </div>
+                                            </SelectItem>
+                                        ))
+                                    ) : (
+                                        <div className="p-2 text-sm text-slate-500 text-center">Nenhum cliente encontrado</div>
+                                    )}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -330,14 +341,18 @@ export default function SalesPageClient({
                                     >
                                         <Trash2 className="h-3.5 w-3.5" />
                                     </button>
-                                    <p className="font-bold text-slate-700 text-sm">{item.serviceName}</p>
-                                    <div className="flex justify-between items-center mt-2">
-                                        <span className="text-xs text-slate-400 font-bold">
-                                            {item.quantity}x R$ {item.pricePerSession.toFixed(2)}
-                                        </span>
-                                        <span className="text-sm font-black text-green-600">
-                                            R$ {item.total.toFixed(2)}
-                                        </span>
+                                    <div className="flex flex-col space-y-2">
+                                        <p className="font-bold text-slate-700 text-sm border-b border-slate-100 pb-2">{item.serviceName}</p>
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center text-xs text-slate-500 font-bold bg-white px-2 py-1 rounded-md shadow-sm border border-slate-100">
+                                                <span>Qtd: {item.quantity}</span>
+                                                <span className="mx-1">•</span>
+                                                <span>{item.pricePerSession.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                                            </div>
+                                            <span className="text-sm font-black text-green-600">
+                                                {item.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             ))}

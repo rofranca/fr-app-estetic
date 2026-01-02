@@ -1,14 +1,19 @@
+
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-export const generateReceipt = (sale: any) => {
+export const generateReceipt = (sale: any, organization?: any) => {
     const doc = new jsPDF();
 
     // Config
     const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
+
+    const orgName = organization?.name || "Sua Clínica";
+    const orgAddress = organization?.address || "";
+    const orgCnpj = organization?.cnpj ? `CNPJ: ${organization.cnpj}` : "";
+    const orgPhone = organization?.phone ? `Tel: ${organization.phone}` : "";
 
     // Header
     doc.setFontSize(22);
@@ -17,9 +22,17 @@ export const generateReceipt = (sale: any) => {
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text("Sua Clínica Estética", pageWidth / 2, 28, { align: "center" });
-    doc.text("Rua Exemplo, 123 - Cidade/UF", pageWidth / 2, 33, { align: "center" });
-    doc.text("CNPJ: 00.000.000/0000-00", pageWidth / 2, 38, { align: "center" });
+    doc.text(orgName, pageWidth / 2, 28, { align: "center" });
+    if (orgAddress) doc.text(orgAddress, pageWidth / 2, 33, { align: "center" });
+
+    let yPos = 38;
+    if (orgCnpj) {
+        doc.text(orgCnpj, pageWidth / 2, yPos, { align: "center" });
+        yPos += 5;
+    }
+    if (orgPhone) {
+        doc.text(orgPhone, pageWidth / 2, yPos, { align: "center" });
+    }
 
     // Sale Info
     doc.setFontSize(12);
@@ -30,7 +43,6 @@ export const generateReceipt = (sale: any) => {
     doc.setFont("helvetica", "normal");
     doc.text(`Data: ${format(new Date(sale.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}`, 14, 56);
     doc.text(`Cliente: ${sale.client.name}`, 14, 62);
-    if (sale.client.phone) doc.text(`Telefone: ${sale.client.phone}`, 14, 68);
 
     // Items Table
     const tableColumn = ["Item / Serviço", "Qtd", "Valor Unit.", "Total"];
@@ -52,10 +64,7 @@ export const generateReceipt = (sale: any) => {
 
     // Totals
     const finalY = (doc as any).lastAutoTable.finalY || 75;
-
     let currentY = finalY + 10;
-
-    // Subtotal (recalculated roughly as Total + Discount)
     const discountVal = Number(sale.discount || 0);
     const totalVal = Number(sale.totalAmount);
     const subtotalVal = totalVal + discountVal;
@@ -81,7 +90,9 @@ export const generateReceipt = (sale: any) => {
     // Footer
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text("Obrigado pela preferência!", pageWidth / 2, pageHeight - 20, { align: "center" });
+    doc.text("Obrigado pela preferência!", PAGE_WIDTH / 2, doc.internal.pageSize.height - 20, { align: "center" });
 
     doc.save(`recibo_${sale.id.substr(0, 8)}.pdf`);
 };
+
+const PAGE_WIDTH = 210; // A4 approx width in mm or defaults
