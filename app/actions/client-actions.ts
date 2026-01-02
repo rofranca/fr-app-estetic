@@ -123,3 +123,31 @@ export async function deleteClient(id: string) {
         return { success: false, error: "Erro ao excluir cliente. Verifique se existem agendamentos vinculados." };
     }
 }
+
+export async function getClientFullProfile(id: string) {
+    try {
+        const client = await prisma.client.findUnique({
+            where: { id },
+            include: {
+                appointments: {
+                    include: { service: true },
+                    orderBy: { startTime: 'desc' }
+                },
+                packages: {
+                    include: { service: true },
+                    orderBy: { createdAt: 'desc' }
+                },
+                records: {
+                    orderBy: { date: 'desc' }
+                },
+                transactions: {
+                    orderBy: { createdAt: 'desc' }
+                }
+            }
+        });
+        return client;
+    } catch (error) {
+        console.error("Error fetching client profile:", error);
+        return null;
+    }
+}

@@ -12,9 +12,10 @@ import { toast } from "sonner";
 import { createClient, importClients } from "@/app/actions/client-actions";
 import { PackageDialog } from "./PackageDialog";
 import { RecordsDialog } from "./RecordsDialog";
-import { PackagePlus, History, ClipboardList, Download, Upload, Search, UserCircle } from "lucide-react";
+import { PackagePlus, History, ClipboardList, Download, Upload, Search, UserCircle, Eye } from "lucide-react";
 import * as XLSX from "xlsx";
 import { ClientDetailDialog } from "./ClientDetailDialog";
+import { ClientSummaryDialog } from "./ClientSummaryDialog";
 
 interface ClientsPageProps {
     clients: any[];
@@ -27,8 +28,10 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
     const [isPackageDialogOpen, setIsPackageDialogOpen] = useState(false);
     const [isRecordsDialogOpen, setIsRecordsDialogOpen] = useState(false);
     const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+    const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
     const [selectedClient, setSelectedClient] = useState<any>(null);
     const [editingClient, setEditingClient] = useState<any>(null);
+    const [summaryClientId, setSummaryClientId] = useState<string>("");
 
     const handleOpenPackage = (client: any) => {
         setSelectedClient(client);
@@ -43,6 +46,11 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
     const handleOpenDetail = (client: any) => {
         setEditingClient(client);
         setIsDetailDialogOpen(true);
+    };
+
+    const handleOpenSummary = (clientId: string) => {
+        setSummaryClientId(clientId);
+        setIsSummaryDialogOpen(true);
     };
 
     const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
@@ -322,6 +330,9 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
                                     </span>
                                 </TableCell>
                                 <TableCell className="text-right space-x-2">
+                                    <Button variant="ghost" size="sm" onClick={() => handleOpenSummary(client.id)} title="Resumo do Cliente">
+                                        <Eye className="h-4 w-4 text-slate-600" />
+                                    </Button>
                                     <Button variant="ghost" size="sm" onClick={() => handleOpenRecords(client)} title="Prontuário">
                                         <ClipboardList className="h-4 w-4 text-blue-600" />
                                     </Button>
@@ -362,6 +373,16 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
                     client={editingClient}
                 />
             )}
+
+            <ClientSummaryDialog
+                isOpen={isSummaryDialogOpen}
+                onClose={() => setIsSummaryDialogOpen(false)}
+                clientId={summaryClientId}
+                onEdit={(client) => {
+                    setIsSummaryDialogOpen(false);
+                    handleOpenDetail(client);
+                }}
+            />
         </div>
     );
 }
