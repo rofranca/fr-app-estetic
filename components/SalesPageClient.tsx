@@ -13,7 +13,10 @@ import {
     Calendar,
     Wallet,
     Tag,
-    AlertCircle
+    AlertCircle,
+    Percent,
+    Briefcase,
+    Ticket
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,12 +27,16 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { createSale } from "@/app/actions/sales-actions";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SalesHistory } from "@/components/SalesHistory";
 
 interface SalesPageClientProps {
     clients: any[];
     services: any[];
     paymentMethods: any[];
     accounts: any[];
+    team: any[];
+    todaySales: any[];
+    todaySummary: any;
 }
 
 interface CartItem {
@@ -41,7 +48,15 @@ interface CartItem {
     total: number;
 }
 
-export default function SalesPageClient({ clients, services, paymentMethods, accounts }: SalesPageClientProps) {
+export default function SalesPageClient({
+    clients,
+    services,
+    paymentMethods,
+    accounts,
+    team,
+    todaySales,
+    todaySummary
+}: SalesPageClientProps) {
     const [selectedClientId, setSelectedClientId] = useState("");
     const [cart, setCart] = useState<CartItem[]>([]);
     const [currentServiceId, setCurrentServiceId] = useState("");
@@ -53,6 +68,12 @@ export default function SalesPageClient({ clients, services, paymentMethods, acc
     const [accountId, setAccountId] = useState("");
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+
+    // New states
+    const [sellerId, setSellerId] = useState("");
+    const [discount, setDiscount] = useState<number>(0);
+    const [discountType, setDiscountType] = useState<string>("FIXED"); // FIXED or PERCENTAGE
+    const [couponCode, setCouponCode] = useState("");
 
     const selectedClient = clients.find(c => c.id === selectedClientId);
     const selectedPaymentMethod = paymentMethods.find(pm => pm.id === paymentMethodId);
@@ -98,7 +119,19 @@ export default function SalesPageClient({ clients, services, paymentMethods, acc
         setCart(cart.filter(item => item.id !== id));
     };
 
-    const totalAmount = cart.reduce((acc, item) => acc + item.total, 0);
+    const subTotalAmount = cart.reduce((acc, item) => acc + item.total, 0);
+
+    // Calculate discount amount
+    let discountAmount = 0;
+    if (discount > 0) {
+        if (discountType === 'PERCENTAGE') {
+            discountAmount = (subTotalAmount * discount) / 100;
+        } else {
+            discountAmount = discount;
+        }
+    }
+
+    const totalAmount = Math.max(0, subTotalAmount - discountAmount);
     const installmentValue = installments > 0 ? totalAmount / installments : 0;
 
     const handleFinalizeSale = async () => {
@@ -119,7 +152,11 @@ export default function SalesPageClient({ clients, services, paymentMethods, acc
                 paymentMethodId,
                 installments,
                 paidNow,
-                accountId: paidNow ? accountId : undefined
+                accountId: paidNow ? accountId : undefined,
+                sellerId: sellerId || undefined,
+                discount,
+                discountType,
+                couponCode: couponCode || undefined
             });
 
             if (result.success) {
@@ -132,6 +169,10 @@ export default function SalesPageClient({ clients, services, paymentMethods, acc
                 setPaidNow(false);
                 setAccountId("");
                 setSearchTerm("");
+                setSellerId("");
+                setDiscount(0);
+                setDiscountType("FIXED");
+                setCouponCode("");
             } else {
                 toast.error(result.error);
             }
@@ -150,6 +191,10 @@ export default function SalesPageClient({ clients, services, paymentMethods, acc
         setPaidNow(false);
         setAccountId("");
         setSearchTerm("");
+        setSellerId("");
+        setDiscount(0);
+        setDiscountType("FIXED");
+        setCouponCode("");
     };
 
     return (
@@ -162,9 +207,12 @@ export default function SalesPageClient({ clients, services, paymentMethods, acc
                     </h1>
                     <p className="text-sm text-slate-500 mt-1 font-medium">Registre vendas e gere lançamentos financeiros automaticamente</p>
                 </div>
-                <Button variant="outline" onClick={clearSale} className="h-12 px-6 rounded-2xl font-bold border-slate-200">
-                    <X className="mr-2 h-5 w-5" /> LIMPAR TUDO
-                </Button>
+                <div className="flex space-x-3">
+                    <SalesHistory sales={todaySales} summary={todaySummary} />
+                    <Button variant="outline" onClick={clearSale} className="h-12 px-6 rounded-2xl font-bold border-slate-200">
+                        <X className="mr-2 h-5 w-5" /> LIMPAR TUDO
+                    </Button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -295,7 +343,62 @@ export default function SalesPageClient({ clients, services, paymentMethods, acc
                             ))}
                         </div>
 
+                        {/* Discount & Seller Section */}
+                        <div className="pt-4 border-t border-slate-100 space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center">
+                                    <Briefcase className="w-3 h-3 mr-1" /> Vendedor
+                                </Label>
+                                <Select value={sellerId} onValueChange={setSellerId}>
+                                    <SelectTrigger className="h-10 text-sm border-slate-200 bg-slate-50">
+                                        <SelectValue placeholder="Selecione o vendedor (opcional)" />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-[200]">
+                                        {team.map(member => (
+                                            <SelectItem key={member.id} value={member.id} className="text-sm">
+                                                {member.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center">
+                                    <Percent className="w-3 h-3 mr-1" /> Desconto
+                                </Label>
+                                <div className="flex space-x-2">
+                                    <Select value={discountType} onValueChange={setDiscountType}>
+                                        <SelectTrigger className="w-[100px] h-10 text-sm border-slate-200 bg-slate-50">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="z-[200]">
+                                            <SelectItem value="FIXED">R$ (Fixo)</SelectItem>
+                                            <SelectItem value="PERCENTAGE">% (Porc.)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <Input
+                                        type="number"
+                                        placeholder="0,00"
+                                        value={discount > 0 ? discount : ''}
+                                        onChange={(e) => setDiscount(Number(e.target.value))}
+                                        className="h-10 text-sm border-slate-200 bg-slate-50 flex-1"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="pt-4 border-t border-slate-100">
+                            <div className="flex justify-between items-center text-slate-400 text-sm mb-1">
+                                <span>Subtotal</span>
+                                <span>R$ {subTotalAmount.toFixed(2)}</span>
+                            </div>
+                            {discountAmount > 0 && (
+                                <div className="flex justify-between items-center text-rose-500 text-sm mb-2 font-bold">
+                                    <span>Desconto</span>
+                                    <span>- R$ {discountAmount.toFixed(2)}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between items-center">
                                 <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total</span>
                                 <span className="text-2xl font-black text-slate-800">

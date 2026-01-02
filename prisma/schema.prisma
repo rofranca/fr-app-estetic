@@ -24,8 +24,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  commissionRate Decimal @default(0) // Taxa de comissão (%)
+  
   appointments Appointment[]
   budgets      Budget[]
+  sales        Budget[] @relation("SalesSeller")
   cashRegisters CashRegister[]
 }
 
@@ -246,6 +249,13 @@ model Budget {
   userId          String       // Profissional que realizou a venda
   user            User         @relation(fields: [userId], references: [id])
   
+  sellerId        String?      // Vendedor responsável
+  seller          User?        @relation("SalesSeller", fields: [sellerId], references: [id])
+  discount        Decimal      @default(0)
+  discountType    String?      // PERCENTAGE, FIXED, COUPON
+  couponCode      String?
+  commission      Decimal      @default(0) // Comissão calculada
+  
   items           BudgetItem[]
 }
 
@@ -259,4 +269,17 @@ model BudgetItem {
 
   budgetId        String
   budget          Budget       @relation(fields: [budgetId], references: [id])
+}
+
+model Coupon {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  type          String   // PERCENTAGE, FIXED
+  value         Decimal
+  active        Boolean  @default(true)
+  expiresAt     DateTime?
+  usageLimit    Int?     // Limite de usos (null = ilimitado)
+  usageCount    Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

@@ -12,7 +12,7 @@ async function getCurrentUser() {
 
 export async function getSaleData() {
     try {
-        const [clients, services, paymentMethods, accounts] = await Promise.all([
+        const [clients, services, paymentMethods, accounts, team] = await Promise.all([
             prisma.client.findMany({
                 where: { status: "ATIVO" },
                 orderBy: { name: 'asc' },
@@ -28,13 +28,17 @@ export async function getSaleData() {
             }),
             prisma.account.findMany({
                 orderBy: { name: 'asc' }
+            }),
+            prisma.user.findMany({
+                orderBy: { name: 'asc' },
+                select: { id: true, name: true, commissionRate: true }
             })
         ]);
 
-        return { clients, services, paymentMethods, accounts };
+        return { clients, services, paymentMethods, accounts, team };
     } catch (error) {
         console.error("Error fetching sale data:", error);
-        return { clients: [], services: [], paymentMethods: [], accounts: [] };
+        return { clients: [], services: [], paymentMethods: [], accounts: [], team: [] };
     }
 }
 
@@ -51,6 +55,10 @@ interface CreateSaleData {
     installments: number;
     paidNow: boolean;
     accountId?: string;
+    sellerId?: string;
+    discount?: number;
+    discountType?: string;
+    couponCode?: string;
 }
 
 export async function createSale(data: CreateSaleData) {
@@ -58,10 +66,33 @@ export async function createSale(data: CreateSaleData) {
         const user = await getCurrentUser();
         if (!user) throw new Error("Usuário não autenticado");
 
-        // Calculate total
-        const totalAmount = data.items.reduce((acc, item) => {
+        // Calculate subtotal
+        const subtotal = data.items.reduce((acc, item) => {
             return acc + (item.quantity * item.pricePerSession);
         }, 0);
+
+        // Apply discount
+        let discountAmount = 0;
+        if (data.discount && data.discount > 0) {
+            if (data.discountType === 'PERCENTAGE') {
+                discountAmount = (subtotal * data.discount) / 100;
+            } else {
+                discountAmount = data.discount;
+            }
+        }
+
+        const totalAmount = subtotal - discountAmount;
+
+        // Calculate commission if seller is specified
+        let commission = 0;
+        if (data.sellerId) {
+            const seller = await prisma.user.findUnique({
+                where: { id: data.sellerId }
+            });
+            if (seller && seller.commissionRate) {
+                commission = (totalAmount * Number(seller.commissionRate)) / 100;
+            }
+        }
 
         // Get payment method details
         const paymentMethod = await prisma.paymentMethod.findUnique({
@@ -83,9 +114,14 @@ export async function createSale(data: CreateSaleData) {
                 name: `Venda - ${client.name}`,
                 clientId: data.clientId,
                 userId: user.id,
+                sellerId: data.sellerId,
                 validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
                 status: "APROVADO",
                 totalAmount: totalAmount,
+                discount: discountAmount,
+                discountType: data.discountType,
+                couponCode: data.couponCode,
+                commission: commission,
                 items: {
                     create: data.items.map(item => ({
                         serviceId: item.serviceId,
@@ -178,5 +214,58 @@ export async function createSale(data: CreateSaleData) {
             success: false,
             error: error instanceof Error ? error.message : "Falha ao criar venda"
         };
+    }
+}
+
+export async function getSalesToday() {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const sales = await prisma.budget.findMany({
+            where: {
+                createdAt: {
+                    gte: today,
+                    lt: tomorrow
+                },
+                status: "APROVADO",
+                name: {
+                    startsWith: "Venda -"
+                }
+            },
+            include: {
+                client: {
+                    select: { name: true }
+                },
+                user: {
+                    select: { name: true }
+                },
+                items: {
+                    include: {
+                        service: {
+                            select: { name: true }
+                        }
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
+
+        // Calculate summary
+        const summary = {
+            total: sales.reduce((acc, sale) => acc + Number(sale.totalAmount), 0),
+            count: sales.length,
+            ticket: sales.length > 0 ? sales.reduce((acc, sale) => acc + Number(sale.totalAmount), 0) / sales.length : 0
+        };
+
+        return { sales, summary };
+    } catch (error) {
+        console.error("Error fetching today sales:", error);
+        return { sales: [], summary: { total: 0, count: 0, ticket: 0 } };
     }
 }
