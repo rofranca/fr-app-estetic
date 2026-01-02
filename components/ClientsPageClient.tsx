@@ -339,24 +339,28 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
             </div>
 
             {selectedClient && (
-                <>
-                    <PackageDialog
-                        isOpen={isPackageDialogOpen}
-                        onClose={() => setIsPackageDialogOpen(false)}
-                        client={selectedClient}
-                        services={services}
-                    />
-                    <RecordsDialog
-                        isOpen={isRecordsDialogOpen}
-                        onClose={() => setIsRecordsDialogOpen(false)}
-                        client={selectedClient}
-                    />
-                    <ClientDetailDialog
-                        isOpen={isDetailDialogOpen}
-                        onClose={() => setIsDetailDialogOpen(false)}
-                        client={editingClient}
-                    />
-                </>
+                <PackageDialog
+                    isOpen={isPackageDialogOpen}
+                    onClose={() => setIsPackageDialogOpen(false)}
+                    client={selectedClient}
+                    services={services}
+                />
+            )}
+
+            {selectedClient && (
+                <RecordsDialog
+                    isOpen={isRecordsDialogOpen}
+                    onClose={() => setIsRecordsDialogOpen(false)}
+                    client={selectedClient}
+                />
+            )}
+
+            {editingClient && (
+                <ClientDetailDialog
+                    isOpen={isDetailDialogOpen}
+                    onClose={() => setIsDetailDialogOpen(false)}
+                    client={editingClient}
+                />
             )}
         </div>
     );
