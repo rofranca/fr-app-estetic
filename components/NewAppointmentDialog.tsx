@@ -24,6 +24,8 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import { ClientSearchDialog } from "./ClientSearchDialog";
+import { Search } from "lucide-react";
 
 interface NewAppointmentDialogProps {
     isOpen: boolean;
@@ -35,7 +37,7 @@ interface NewAppointmentDialogProps {
 }
 
 export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, services, professionals }: NewAppointmentDialogProps) {
-    const [openClient, setOpenClient] = useState(false)
+    const [isClientSearchOpen, setIsClientSearchOpen] = useState(false);
     const [clientId, setClientId] = useState("");
     const [serviceId, setServiceId] = useState(""); // For single service selection
     const [professionalId, setProfessionalId] = useState(professionals[0]?.id || "");
@@ -152,52 +154,23 @@ export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, s
                             Cliente
                         </Label>
                         <div className="col-span-3">
-                            <Popover open={openClient} onOpenChange={setOpenClient} modal={true}>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        aria-expanded={openClient}
-                                        className="w-full justify-between"
-                                    >
-                                        {clientId
-                                            ? clients.find((client) => client.id === clientId)?.name
-                                            : "Selecione o cliente..."}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[300px] p-0" align="start">
-                                    <Command filter={(value, search) => {
-                                        if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-                                        return 0;
-                                    }}>
-                                        <CommandInput placeholder="Buscar cliente..." />
-                                        <CommandList>
-                                            <CommandEmpty>Cliente não encontrado.</CommandEmpty>
-                                            <CommandGroup>
-                                                {clients.map((client) => (
-                                                    <CommandItem
-                                                        key={client.id}
-                                                        value={client.name}
-                                                        onSelect={() => {
-                                                            setClientId(client.id);
-                                                            setOpenClient(false);
-                                                        }}
-                                                    >
-                                                        <Check
-                                                            className={cn(
-                                                                "mr-2 h-4 w-4",
-                                                                clientId === client.id ? "opacity-100" : "opacity-0"
-                                                            )}
-                                                        />
-                                                        {client.name}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
+                            <Button
+                                variant="outline"
+                                className="w-full justify-between"
+                                onClick={() => setIsClientSearchOpen(true)}
+                            >
+                                {clientId
+                                    ? clients.find(c => c.id === clientId)?.name
+                                    : "Clique para buscar..."}
+                                <Search className="ml-2 h-4 w-4 opacity-50" />
+                            </Button>
+                            <ClientSearchDialog
+                                isOpen={isClientSearchOpen}
+                                onClose={() => setIsClientSearchOpen(false)}
+                                onSelect={setClientId}
+                                clients={clients}
+                                selectedId={clientId}
+                            />
                         </div>
                     </div>
 
