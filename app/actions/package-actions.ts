@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { AsaasService } from "@/lib/asaas";
 
 export async function createPackage(data: {
     clientId: string;
@@ -10,6 +11,28 @@ export async function createPackage(data: {
     price: number;
 }) {
     try {
+        // 1. Fetch Client info for Asaas
+        const client = await prisma.client.findUnique({ where: { id: data.clientId } });
+        if (!client) throw new Error("Cliente não encontrado.");
+
+        let asaasId = client.asaasId;
+
+        // 2. Sync with Asaas if not synced
+        if (!asaasId) {
+            const asaasCustomer = await AsaasService.createCustomer({
+                name: client.name,
+                email: client.email || "",
+                cpf: client.cpf || "",
+                phone: client.phone || ""
+            });
+            asaasId = asaasCustomer.id;
+            await prisma.client.update({
+                where: { id: client.id },
+                data: { asaasId }
+            });
+        }
+
+        // 3. Create Package in DB
         const pkg = await prisma.package.create({
             data: {
                 clientId: data.clientId,
@@ -21,20 +44,39 @@ export async function createPackage(data: {
             },
         });
 
-        // Create a transaction for the package sale
+        // 4. Create Charge on Asaas
+        let invoiceUrl = "";
+        let transactionAsaasId = "";
+        try {
+            const charge = await AsaasService.createCharge({
+                customerId: asaasId!,
+                value: data.price,
+                dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 3 days from now
+                description: `Pacote Estética: ${data.totalSessions} sessões`
+            });
+            invoiceUrl = charge.invoiceUrl;
+            transactionAsaasId = charge.id;
+        } catch (err) {
+            console.error("Erro ao gerar cobranca no Asaas:", err);
+            // We continue anyway, but without the asaas link
+        }
+
+        // 5. Create a transaction for the package sale
         await prisma.transaction.create({
             data: {
                 description: `Venda de Pacote: ${data.totalSessions} sessões`,
                 amount: data.price,
                 type: "INCOME",
-                status: "PAID", // Assuming paid for now, integrated with Asaas later if needed
+                status: transactionAsaasId ? "PENDING" : "PAID",
                 clientId: data.clientId,
                 packageId: pkg.id,
+                asaasId: transactionAsaasId,
+                invoiceUrl: invoiceUrl
             }
         });
 
         revalidatePath("/clients");
-        return { success: true, package: pkg };
+        return { success: true, package: pkg, invoiceUrl };
     } catch (error) {
         console.error("Error creating package:", error);
         return { success: false, error: "Falha ao contratar pacote." };

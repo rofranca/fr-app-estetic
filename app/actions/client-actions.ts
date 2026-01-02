@@ -34,9 +34,14 @@ export async function createClient(data: {
                 phone: data.phone
             });
             console.log("Cliente sincronizado no Asaas:", asaasCustomer.id);
+
+            // Update local client with Asaas ID
+            await prisma.client.update({
+                where: { id: newClient.id },
+                data: { asaasId: asaasCustomer.id }
+            });
         } catch (asaasError) {
             console.error("Falha ao criar no Asaas (mas salvo localmente):", asaasError);
-            // We could return a warning here
         }
 
         revalidatePath('/clients');
