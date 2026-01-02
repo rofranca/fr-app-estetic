@@ -250,7 +250,7 @@ export function BudgetDialog({ isOpen, onClose, client, clients, services, team,
                                     </Select>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold text-blue-600 uppercase">Qtd</Label>
+                                    <Label className="text-[10px] font-bold text-blue-600 uppercase">Sessões</Label>
                                     <Input
                                         type="number"
                                         value={currentQuantity}
@@ -259,7 +259,7 @@ export function BudgetDialog({ isOpen, onClose, client, clients, services, team,
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-bold text-blue-600 uppercase">Valor Un.</Label>
+                                    <Label className="text-[10px] font-bold text-blue-600 uppercase">Valor p/ Sessão</Label>
                                     <Input
                                         type="number"
                                         value={currentPrice}
@@ -291,7 +291,7 @@ export function BudgetDialog({ isOpen, onClose, client, clients, services, team,
                                     </button>
                                     <div className="text-xs font-bold text-slate-700 truncate">{item.serviceName}</div>
                                     <div className="flex justify-between items-center mt-1">
-                                        <span className="text-[10px] text-slate-400 font-bold">{item.quantity}x R$ {Number(item.pricePerSession).toFixed(2)}</span>
+                                        <span className="text-[10px] text-slate-400 font-bold">{item.quantity} sessão(ões) x R$ {Number(item.pricePerSession).toFixed(2)}</span>
                                         <span className="text-xs font-black text-blue-600">R$ {Number(item.totalPrice).toFixed(2)}</span>
                                     </div>
                                 </div>
