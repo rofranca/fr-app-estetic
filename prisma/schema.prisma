@@ -26,6 +26,7 @@ model User {
 
   appointments Appointment[]
   budgets      Budget[]
+  cashRegisters CashRegister[]
 }
 
 model Client {
@@ -139,6 +140,7 @@ model Transaction {
   paidAt        DateTime?
   asaasId       String? // External ID from Asaas
   invoiceUrl    String?
+  notes         String?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
@@ -148,6 +150,67 @@ model Transaction {
   appointment   Appointment?    @relation(fields: [appointmentId], references: [id])
   packageId     String?
   package       Package?        @relation(fields: [packageId], references: [id])
+
+  categoryId      String?
+  category        FinancialCategory? @relation(fields: [categoryId], references: [id])
+  accountId       String?
+  account         Account?           @relation(fields: [accountId], references: [id])
+  paymentMethodId String?
+  paymentMethod   PaymentMethod?     @relation(fields: [paymentMethodId], references: [id])
+  cashRegisterId  String?
+  cashRegister    CashRegister?      @relation(fields: [cashRegisterId], references: [id])
+}
+
+model FinancialCategory {
+  id             String        @id @default(uuid())
+  name           String
+  type           String        // INCOME, EXPENSE
+  isRecurring    Boolean       @default(false)
+  defaultAmount  Decimal?
+  dueDay         Int?          // Day of month for recurring expenses
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  transactions   Transaction[]
+}
+
+model Account {
+  id           String        @id @default(uuid())
+  name         String
+  balance      Decimal       @default(0)
+  type         String        @default("CASH") // BANK, CASH, etc.
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  transactions Transaction[]
+}
+
+model PaymentMethod {
+  id           String        @id @default(uuid())
+  name         String
+  type         String        // PIX, CREDIT_CARD, BOLETO, DINHEIRO, etc.
+  receiptDays  Int           @default(0) // Days to receive the amount
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  transactions Transaction[]
+}
+
+model CashRegister {
+  id              String        @id @default(uuid())
+  status          String        @default("OPEN") // OPEN, CLOSED
+  openingDate     DateTime      @default(now())
+  closingDate     DateTime?
+  openingBalance  Decimal
+  closingBalance  Decimal?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  
+  transactions    Transaction[]
 }
 
 model Package {

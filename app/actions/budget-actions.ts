@@ -67,11 +67,46 @@ export async function getBudgetsByClient(clientId: string) {
 
 export async function updateBudgetStatus(budgetId: string, status: string) {
     try {
+        // Get full budget details
+        const budgetDetails = await prisma.budget.findUnique({
+            where: { id: budgetId },
+            include: {
+                client: true,
+                items: {
+                    include: { service: true }
+                }
+            }
+        });
+
+        if (!budgetDetails) throw new Error("Orçamento não encontrado");
+
+        // Update budget status
         const budget = await prisma.budget.update({
             where: { id: budgetId },
             data: { status }
         });
+
+        // If approved, create financial transaction
+        if (status === "APROVADO" && budgetDetails.status !== "APROVADO") {
+            const description = `Venda: ${budgetDetails.name} - ${budgetDetails.client.name}`;
+
+            // Create income transaction
+            await prisma.transaction.create({
+                data: {
+                    description,
+                    amount: budgetDetails.totalAmount,
+                    type: "INCOME",
+                    status: "PENDING",
+                    dueDate: new Date(),
+                    clientId: budgetDetails.clientId,
+                    notes: `Gerado automaticamente do orçamento: ${budgetDetails.name}\nItens: ${budgetDetails.items.map(i => `${i.service.name} (${i.quantity}x)`).join(', ')}`
+                }
+            });
+        }
+
         revalidatePath("/clients");
+        revalidatePath("/financial");
+        revalidatePath("/financial/transactions");
         return budget;
     } catch (error) {
         console.error("Error updating budget status:", error);

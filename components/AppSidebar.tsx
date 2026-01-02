@@ -68,6 +68,13 @@ const routes = [
         icon: DollarSign,
         href: "/financial",
         color: "text-emerald-500",
+        subItems: [
+            { label: "Lançamentos", href: "/financial/transactions", icon: FileText },
+            { label: "Meus Caixas", href: "/financial/cash-registers", icon: Wallet },
+            { label: "Categorias", href: "/financial/categories", icon: LayoutDashboard },
+            { label: "Contas", href: "/financial/accounts", icon: Wallet },
+            { label: "Formas de Pagamento", href: "/financial/payment-methods", icon: DollarSign },
+        ]
     },
     {
         label: "Relatórios",
