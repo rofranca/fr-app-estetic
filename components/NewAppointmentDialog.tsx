@@ -34,13 +34,15 @@ interface NewAppointmentDialogProps {
     clients: { id: string, name: string }[];
     services: { id: string, name: string }[];
     professionals: { id: string, name: string }[];
+    rooms: { id: string, name: string }[];
 }
 
-export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, services, professionals }: NewAppointmentDialogProps) {
+export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, services, professionals, rooms }: NewAppointmentDialogProps) {
     const [isClientSearchOpen, setIsClientSearchOpen] = useState(false);
     const [clientId, setClientId] = useState("");
     const [serviceId, setServiceId] = useState(""); // For single service selection
     const [professionalId, setProfessionalId] = useState(professionals[0]?.id || "");
+    const [roomId, setRoomId] = useState("");
     const [activePackages, setActivePackages] = useState<any[]>([]);
     const [selectedPackageIds, setSelectedPackageIds] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
@@ -80,7 +82,6 @@ export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, s
             return;
         }
 
-        // Logic: If packages selected, use them. Else use serviceId.
         if (selectedPackageIds.length === 0 && !serviceId) {
             toast.error("Selecione um serviço ou pelo menos um pacote.");
             return;
@@ -89,43 +90,56 @@ export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, s
         setLoading(true);
         try {
             if (activePackages.length > 0 && selectedPackageIds.length > 0) {
-                // Multi-package mode
+                // Multi-package SEQUENTIAL implementation
+                const packagesToSchedule = activePackages.filter(p => selectedPackageIds.includes(p.id));
+
+                // Sort by service name for consistency
+                packagesToSchedule.sort((a, b) => a.service.name.localeCompare(b.service.name));
+
+                let currentStartTime = new Date(selectedDate);
                 let successCount = 0;
-                for (const pkgId of selectedPackageIds) {
-                    const pkg = activePackages.find(p => p.id === pkgId);
-                    if (pkg) {
-                        const result = await createAppointment({
-                            startTime: selectedDate,
-                            clientId,
-                            serviceId: pkg.serviceId,
-                            professionalId,
-                            packageId: pkg.id
-                        });
-                        if (result.success) successCount++;
+
+                for (const pkg of packagesToSchedule) {
+                    const result = await createAppointment({
+                        startTime: currentStartTime,
+                        clientId,
+                        serviceId: pkg.serviceId,
+                        professionalId,
+                        packageId: pkg.id,
+                        roomId: roomId || undefined
+                    });
+
+                    if (result.success) {
+                        successCount++;
+                        // Increment start time by duration
+                        const duration = pkg.service.duration || 30;
+                        currentStartTime = new Date(currentStartTime.getTime() + duration * 60000);
+                    } else {
+                        toast.error(`Erro ao agendar ${pkg.service.name}: ${result.error}`);
+                        break;
                     }
                 }
 
                 if (successCount > 0) {
-                    toast.success(`${successCount} agendamentos criados!`);
+                    toast.success(`${successCount} agendamentos sequenciais criados!`);
                     onClose();
-                } else {
-                    toast.error("Erro ao criar agendamentos.");
                 }
 
             } else {
-                // Single service mode (no package)
+                // Single service mode
                 const result = await createAppointment({
                     startTime: selectedDate,
                     clientId,
                     serviceId,
-                    professionalId
+                    professionalId,
+                    roomId: roomId || undefined
                 });
 
                 if (result.success) {
                     toast.success("Agendamento criado!");
                     onClose();
                 } else {
-                    toast.error("Erro ao criar agendamento");
+                    toast.error(result.error || "Erro ao criar agendamento");
                 }
             }
         } catch (error) {

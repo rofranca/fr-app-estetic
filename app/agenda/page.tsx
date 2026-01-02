@@ -1,16 +1,17 @@
-import CalendarClient from "@/components/CalendarClient";
-import { getAppointments, getClients, getServices, getProfessionals, getCalendarBlocks } from "../actions/appointment-actions";
-import { getOrganization } from "../actions/settings-actions";
+import { getRooms } from "../actions/room-actions";
 
 export default async function AgendaPage() {
-    const [initialEvents, clients, services, professionals, orgResult, blocks] = await Promise.all([
+    const [initialEvents, clients, services, professionals, orgResult, blocks, roomsResult] = await Promise.all([
         getAppointments(),
         getClients(),
         getServices(),
         getProfessionals(),
         getOrganization(),
-        getCalendarBlocks()
+        getCalendarBlocks(),
+        getRooms()
     ]);
+
+    const rooms = roomsResult.success ? roomsResult.rooms : [];
 
     // Merge blocks into events
     const allEvents = [...initialEvents, ...blocks];
@@ -39,6 +40,7 @@ export default async function AgendaPage() {
                     services={services}
                     professionals={professionals}
                     config={config}
+                    rooms={rooms}
                 />
             </div>
         </div>

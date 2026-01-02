@@ -23,6 +23,7 @@ interface CalendarClientProps {
     clients: { id: string, name: string }[];
     services: { id: string, name: string }[];
     professionals: { id: string, name: string }[];
+    rooms?: { id: string, name: string }[];
     config?: {
         slotDuration: string;  // "00:05:00"
         slotMinTime: string;   // "08:00:00"
@@ -30,7 +31,7 @@ interface CalendarClientProps {
     };
 }
 
-export default function CalendarClient({ initialEvents, clients, services, professionals, config }: CalendarClientProps) {
+export default function CalendarClient({ initialEvents, clients, services, professionals, config, rooms }: CalendarClientProps) {
     const [events, setEvents] = useState(initialEvents);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -131,6 +132,7 @@ export default function CalendarClient({ initialEvents, clients, services, profe
                     clients={clients}
                     services={services}
                     professionals={professionals}
+                    rooms={rooms || []}
                 />
                 <AppointmentDetailsDialog
                     isOpen={isDetailsOpen}

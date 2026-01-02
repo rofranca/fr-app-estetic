@@ -106,6 +106,9 @@ model Appointment {
   package   Package? @relation(fields: [packageId], references: [id])
   
   transactions Transaction[]
+  
+  roomId        String?
+  room          Room?    @relation(fields: [roomId], references: [id])
 }
 
 model Record {
@@ -310,3 +313,12 @@ model CalendarBlock {
   updatedAt DateTime @updatedAt
 }
 
+model Room {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  active      Boolean       @default(true)
+  appointments Appointment[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}

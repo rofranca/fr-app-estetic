@@ -107,6 +107,7 @@ export async function createAppointment(data: {
     professionalId: string;
     notes?: string;
     packageId?: string;
+    roomId?: string;
 }) {
     try {
         const service = await prisma.service.findUnique({ where: { id: data.serviceId } })
@@ -114,6 +115,38 @@ export async function createAppointment(data: {
 
         // Calculate end time based on service duration
         const endTime = new Date(new Date(data.startTime).getTime() + service.duration * 60000)
+
+        // Conflict Check
+        // 1. Check Professional Availability
+        const professionalConflict = await prisma.appointment.findFirst({
+            where: {
+                userId: data.professionalId,
+                status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+                OR: [
+                    { startTime: { lt: endTime }, endTime: { gt: data.startTime } }
+                ]
+            }
+        });
+
+        if (professionalConflict) {
+            throw new Error("Profissional já possui agendamento neste horário.");
+        }
+
+        // 2. Check Room Availability (if room selected)
+        if (data.roomId) {
+            const roomConflict = await prisma.appointment.findFirst({
+                where: {
+                    roomId: data.roomId,
+                    status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+                    OR: [
+                        { startTime: { lt: endTime }, endTime: { gt: data.startTime } }
+                    ]
+                }
+            });
+            if (roomConflict) {
+                throw new Error("Sala já ocupada neste horário.");
+            }
+        }
 
         // If a package is used, check and decrement
         if (data.packageId) {
@@ -140,7 +173,8 @@ export async function createAppointment(data: {
                 userId: data.professionalId,
                 status: "SCHEDULED",
                 notes: data.notes,
-                packageId: data.packageId
+                packageId: data.packageId,
+                roomId: data.roomId
             }
         })
 
@@ -190,42 +224,11 @@ export async function updateAppointmentStatus(id: string, status: string) {
         const appointment = await prisma.appointment.findUnique({ where: { id } });
         if (!appointment) throw new Error("Appointment not found");
 
-        const oldStatus = appointment.status;
+        // CASCADE UPDATE LOGIC
+        // If status is changed, apply to ALL appointments of this client on this day
+        // This is per specific user request: "ao cancelar... exclua todos os agendamentos do mesmo cliente"
+        // We extend this to ANY status change to keep consistency (e.g. Confirming all sequentially)
 
-        // Logic for refunding session if cancelled
-        if (status === 'CANCELLED' && oldStatus !== 'CANCELLED' && appointment.packageId) {
-            // Give back the session if it was part of a package
-            await prisma.package.update({
-                where: { id: appointment.packageId },
-                data: {
-                    remainingSessions: { increment: 1 },
-                    status: 'ACTIVE' // Ensure active if it was completed
-                }
-            });
-        }
-
-        // Logic for consuming session if reactivating a cancelled one?
-        // If it was cancelled (session refunded) and now we set directly to CONFIRMED or NO_SHOW, we should deduct again.
-        if (oldStatus === 'CANCELLED' && status !== 'CANCELLED' && appointment.packageId) {
-            const pkg = await prisma.package.findUnique({ where: { id: appointment.packageId } });
-            if (pkg && pkg.remainingSessions > 0) {
-                await prisma.package.update({
-                    where: { id: appointment.packageId },
-                    data: {
-                        remainingSessions: { decrement: 1 }
-                    }
-                });
-            } else {
-                return { success: false, error: "Pacote sem sessões disponíveis para reativar." };
-            }
-        }
-
-        await prisma.appointment.update({
-            where: { id },
-            data: { status }
-        });
-
-        // Update all other appointments for same client on same day
         const startOfDay = new Date(appointment.startTime);
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(appointment.startTime);
@@ -237,39 +240,39 @@ export async function updateAppointmentStatus(id: string, status: string) {
                 startTime: {
                     gte: startOfDay,
                     lte: endOfDay
-                },
-                id: { not: id }
+                }
             }
         });
 
-        // Apply same logic (refund/consume) for related appointments? 
-        // Yes, if "All Regions" are cancelled/confirmed, we should update remainingSessions accordingly.
-        // NOTE: This could get complex if mixed packages are involved. 
-        // For simplicity and correctness, we should loop and recursively call this function? 
-        // Or refactor core logic. 
-        // Refactoring core logic into internal function is best to avoid infinite recursion.
-
-        // Simpler approach: Just update status and implement package logic locally here for loop.
         for (const appt of sameDayAppointments) {
-            const apptOldStatus = appt.status;
+            // Skip if already in the target status (optimization)
+            if (appt.status === status) continue;
 
-            // Package Logic for each related appt
-            if (status === 'CANCELLED' && apptOldStatus !== 'CANCELLED' && appt.packageId) {
+            // Handle Package Logic
+            // Refund session if Cancelling
+            if (status === 'CANCELLED' && appt.status !== 'CANCELLED' && appt.packageId) {
                 await prisma.package.update({
                     where: { id: appt.packageId },
-                    data: { remainingSessions: { increment: 1 }, status: 'ACTIVE' }
+                    data: {
+                        remainingSessions: { increment: 1 },
+                        status: 'ACTIVE'
+                    }
                 });
             }
-            if (apptOldStatus === 'CANCELLED' && status !== 'CANCELLED' && appt.packageId) {
+            // Consume session if Reactivating (from Cancelled -> Scheduled/Confirmed)
+            else if (appt.status === 'CANCELLED' && status !== 'CANCELLED' && appt.packageId) {
                 const pkg = await prisma.package.findUnique({ where: { id: appt.packageId } });
                 if (pkg && pkg.remainingSessions > 0) {
                     await prisma.package.update({
                         where: { id: appt.packageId },
-                        data: { remainingSessions: { decrement: 1 } }
+                        data: {
+                            remainingSessions: { decrement: 1 }
+                        }
                     });
                 }
             }
 
+            // Update status
             await prisma.appointment.update({
                 where: { id: appt.id },
                 data: { status }
