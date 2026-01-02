@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from "sonner";
 import { createClient } from "@/app/actions/client-actions";
 import { PackageDialog } from "./PackageDialog";
-import { PackagePlus, History } from "lucide-react";
+import { RecordsDialog } from "./RecordsDialog";
+import { PackagePlus, History, ClipboardList } from "lucide-react";
 
 interface ClientsPageProps {
     clients: any[];
@@ -20,11 +21,17 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [isPackageDialogOpen, setIsPackageDialogOpen] = useState(false);
+    const [isRecordsDialogOpen, setIsRecordsDialogOpen] = useState(false);
     const [selectedClient, setSelectedClient] = useState<any>(null);
 
     const handleOpenPackage = (client: any) => {
         setSelectedClient(client);
         setIsPackageDialogOpen(true);
+    };
+
+    const handleOpenRecords = (client: any) => {
+        setSelectedClient(client);
+        setIsRecordsDialogOpen(true);
     };
 
     async function handleSubmit(formData: FormData) {
@@ -35,6 +42,7 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
             phone: formData.get('phone') as string,
             cpf: formData.get('cpf') as string,
             address: formData.get('address') as string,
+            birthDate: formData.get('birthDate') ? new Date(formData.get('birthDate') as string) : undefined,
         };
 
         const result = await createClient(data);
@@ -74,13 +82,19 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
                                     <Input name="cpf" required placeholder="000.000.000-00" />
                                 </div>
                                 <div className="space-y-2">
+                                    <Label>Data de Nascimento</Label>
+                                    <Input name="birthDate" type="date" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
                                     <Label>Telefone</Label>
                                     <Input name="phone" required placeholder="(11) 99999-9999" />
                                 </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Email</Label>
-                                <Input name="email" type="email" required placeholder="joana@email.com" />
+                                <div className="space-y-2">
+                                    <Label>Email</Label>
+                                    <Input name="email" type="email" required placeholder="joana@email.com" />
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <Label>Endereço</Label>
@@ -117,6 +131,9 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
                                 <TableCell>{client.phone}</TableCell>
                                 <TableCell>{client.cpf}</TableCell>
                                 <TableCell className="text-right space-x-2">
+                                    <Button variant="ghost" size="sm" onClick={() => handleOpenRecords(client)} title="Prontuário">
+                                        <ClipboardList className="h-4 w-4 text-blue-600" />
+                                    </Button>
                                     <Button variant="ghost" size="sm" onClick={() => handleOpenPackage(client)} title="Vender Pacote">
                                         <PackagePlus className="h-4 w-4 text-emerald-600" />
                                     </Button>
@@ -131,12 +148,19 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
             </div>
 
             {selectedClient && (
-                <PackageDialog
-                    isOpen={isPackageDialogOpen}
-                    onClose={() => setIsPackageDialogOpen(false)}
-                    client={selectedClient}
-                    services={services}
-                />
+                <>
+                    <PackageDialog
+                        isOpen={isPackageDialogOpen}
+                        onClose={() => setIsPackageDialogOpen(false)}
+                        client={selectedClient}
+                        services={services}
+                    />
+                    <RecordsDialog
+                        isOpen={isRecordsDialogOpen}
+                        onClose={() => setIsRecordsDialogOpen(false)}
+                        client={selectedClient}
+                    />
+                </>
             )}
         </div>
     );

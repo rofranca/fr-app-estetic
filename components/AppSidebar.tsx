@@ -51,8 +51,14 @@ const routes = [
         color: "text-emerald-500",
     },
     {
+        label: "Relatórios",
+        icon: FileText,
+        href: "/reports",
+        color: "text-blue-400",
+    },
+    {
         label: "Equipe",
-        icon: Settings, // Using Settings as placeholder or Users with different style
+        icon: Settings,
         href: "/team",
         color: "text-gray-500",
     },
