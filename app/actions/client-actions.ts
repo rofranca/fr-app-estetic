@@ -111,3 +111,15 @@ export async function importClients(clientsData: any[]) {
         return { success: false, error: "Erro ao importar clientes." };
     }
 }
+export async function deleteClient(id: string) {
+    try {
+        await prisma.client.delete({
+            where: { id }
+        });
+        revalidatePath('/clients');
+        return { success: true };
+    } catch (error) {
+        console.error("Error deleting client:", error);
+        return { success: false, error: "Erro ao excluir cliente. Verifique se existem agendamentos vinculados." };
+    }
+}

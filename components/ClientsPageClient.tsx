@@ -12,8 +12,9 @@ import { toast } from "sonner";
 import { createClient, importClients } from "@/app/actions/client-actions";
 import { PackageDialog } from "./PackageDialog";
 import { RecordsDialog } from "./RecordsDialog";
-import { PackagePlus, History, ClipboardList, Download, Upload, Search } from "lucide-react";
+import { PackagePlus, History, ClipboardList, Download, Upload, Search, UserCircle } from "lucide-react";
 import * as XLSX from "xlsx";
+import { ClientDetailDialog } from "./ClientDetailDialog";
 
 interface ClientsPageProps {
     clients: any[];
@@ -25,7 +26,9 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
     const [loading, setLoading] = useState(false);
     const [isPackageDialogOpen, setIsPackageDialogOpen] = useState(false);
     const [isRecordsDialogOpen, setIsRecordsDialogOpen] = useState(false);
+    const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
     const [selectedClient, setSelectedClient] = useState<any>(null);
+    const [editingClient, setEditingClient] = useState<any>(null);
 
     const handleOpenPackage = (client: any) => {
         setSelectedClient(client);
@@ -35,6 +38,11 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
     const handleOpenRecords = (client: any) => {
         setSelectedClient(client);
         setIsRecordsDialogOpen(true);
+    };
+
+    const handleOpenDetail = (client: any) => {
+        setEditingClient(client);
+        setIsDetailDialogOpen(true);
     };
 
     const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
@@ -294,7 +302,15 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
                                     <div className="font-mono text-slate-400">{client.id.split('-')[0]}</div>
                                     <div className="text-[10px]">{new Date(client.createdAt).toLocaleDateString()}</div>
                                 </TableCell>
-                                <TableCell className="font-medium">{client.name}</TableCell>
+                                <TableCell>
+                                    <button
+                                        onClick={() => handleOpenDetail(client)}
+                                        className="font-semibold text-blue-600 hover:underline flex items-center"
+                                    >
+                                        <UserCircle className="h-3 w-3 mr-1" />
+                                        {client.name}
+                                    </button>
+                                </TableCell>
                                 <TableCell>{client.phone}</TableCell>
                                 <TableCell>{client.city} / {client.state}</TableCell>
                                 <TableCell>
@@ -334,6 +350,11 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
                         isOpen={isRecordsDialogOpen}
                         onClose={() => setIsRecordsDialogOpen(false)}
                         client={selectedClient}
+                    />
+                    <ClientDetailDialog
+                        isOpen={isDetailDialogOpen}
+                        onClose={() => setIsDetailDialogOpen(false)}
+                        client={editingClient}
                     />
                 </>
             )}
