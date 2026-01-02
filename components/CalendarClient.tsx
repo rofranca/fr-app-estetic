@@ -39,13 +39,18 @@ export default function CalendarClient({ initialEvents, clients, services, profe
     const [isBlockDialogOpen, setIsBlockDialogOpen] = useState(false);
     const router = useRouter();
 
+    // Sync events with server data on refresh
+    useEffect(() => {
+        setEvents(initialEvents);
+    }, [initialEvents]);
+
     // Auto-refresh every 30 seconds
     useEffect(() => {
         const interval = setInterval(() => {
             router.refresh();
         }, 30000);
         return () => clearInterval(interval);
-    }, [router]);
+    }, [router, initialEvents]); // Add initialEvents to dependency not strictly needed but safe
 
     const handleEventDrop = async (info: any) => {
         const { id, start, end } = info.event;

@@ -95,6 +95,12 @@ const routes = [
         href: "/team",
         color: "text-gray-500",
     },
+    {
+        label: "Configurações",
+        icon: Settings,
+        href: "/settings",
+        color: "text-zinc-400",
+    },
 ];
 
 function SidebarItem({ route, pathname }: { route: any, pathname: string }) {

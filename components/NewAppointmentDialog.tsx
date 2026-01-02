@@ -152,49 +152,18 @@ export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, s
                             Cliente
                         </Label>
                         <div className="col-span-3">
-                            <Popover open={openClient} onOpenChange={setOpenClient} modal={true}>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        aria-expanded={openClient}
-                                        className="w-full justify-between"
-                                    >
-                                        {clientId
-                                            ? clients.find((client) => client.id === clientId)?.name
-                                            : "Selecione o cliente..."}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[300px] p-0">
-                                    <Command>
-                                        <CommandInput placeholder="Buscar cliente..." />
-                                        <CommandList>
-                                            <CommandEmpty>Cliente não encontrado.</CommandEmpty>
-                                            <CommandGroup>
-                                                {clients.map((client) => (
-                                                    <CommandItem
-                                                        key={client.id}
-                                                        value={client.name}
-                                                        onSelect={() => {
-                                                            setClientId(client.id === clientId ? "" : client.id)
-                                                            setOpenClient(false)
-                                                        }}
-                                                    >
-                                                        <Check
-                                                            className={cn(
-                                                                "mr-2 h-4 w-4",
-                                                                clientId === client.id ? "opacity-100" : "opacity-0"
-                                                            )}
-                                                        />
-                                                        {client.name}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
+                            <Select onValueChange={setClientId} value={clientId}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Selecione o cliente..." />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[300px]">
+                                    {clients.map((client) => (
+                                        <SelectItem key={client.id} value={client.id}>
+                                            {client.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
 
