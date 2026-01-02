@@ -51,6 +51,7 @@ export async function createAppointment(data: {
     clientId: string;
     professionalId: string;
     notes?: string;
+    packageId?: string;
 }) {
     try {
         const service = await prisma.service.findUnique({ where: { id: data.serviceId } })
@@ -58,6 +59,22 @@ export async function createAppointment(data: {
 
         // Calculate end time based on service duration
         const endTime = new Date(new Date(data.startTime).getTime() + service.duration * 60000)
+
+        // If a package is used, check and decrement
+        if (data.packageId) {
+            const pkg = await prisma.package.findUnique({ where: { id: data.packageId } });
+            if (!pkg || pkg.remainingSessions <= 0) {
+                throw new Error("Package not found or no sessions remaining");
+            }
+
+            await prisma.package.update({
+                where: { id: data.packageId },
+                data: {
+                    remainingSessions: pkg.remainingSessions - 1,
+                    status: pkg.remainingSessions - 1 === 0 ? "COMPLETED" : "ACTIVE"
+                }
+            });
+        }
 
         await prisma.appointment.create({
             data: {
@@ -67,15 +84,16 @@ export async function createAppointment(data: {
                 clientId: data.clientId,
                 userId: data.professionalId,
                 status: "SCHEDULED",
-                notes: data.notes
+                notes: data.notes,
+                packageId: data.packageId
             }
         })
 
         revalidatePath('/agenda')
         return { success: true }
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating appointment:", error)
-        return { success: false, error: "Failed to create appointment" }
+        return { success: false, error: error.message || "Failed to create appointment" }
     }
 }
 

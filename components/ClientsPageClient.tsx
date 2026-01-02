@@ -8,10 +8,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { createClient } from "@/app/actions/client-actions";
+import { PackageDialog } from "./PackageDialog";
+import { PackagePlus, History } from "lucide-react";
 
-export default function ClientsPage({ clients }: { clients: any[] }) {
+interface ClientsPageProps {
+    clients: any[];
+    services: any[];
+}
+
+export default function ClientsPage({ clients, services }: ClientsPageProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [isPackageDialogOpen, setIsPackageDialogOpen] = useState(false);
+    const [selectedClient, setSelectedClient] = useState<any>(null);
+
+    const handleOpenPackage = (client: any) => {
+        setSelectedClient(client);
+        setIsPackageDialogOpen(true);
+    };
 
     async function handleSubmit(formData: FormData) {
         setLoading(true);
@@ -88,12 +102,13 @@ export default function ClientsPage({ clients }: { clients: any[] }) {
                             <TableHead>Email</TableHead>
                             <TableHead>Telefone</TableHead>
                             <TableHead>CPF</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {clients.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center text-muted-foreground">Nenhum cliente cadastrado.</TableCell>
+                                <TableCell colSpan={5} className="text-center text-muted-foreground">Nenhum cliente cadastrado.</TableCell>
                             </TableRow>
                         ) : clients.map((client) => (
                             <TableRow key={client.id}>
@@ -101,11 +116,28 @@ export default function ClientsPage({ clients }: { clients: any[] }) {
                                 <TableCell>{client.email}</TableCell>
                                 <TableCell>{client.phone}</TableCell>
                                 <TableCell>{client.cpf}</TableCell>
+                                <TableCell className="text-right space-x-2">
+                                    <Button variant="ghost" size="sm" onClick={() => handleOpenPackage(client)} title="Vender Pacote">
+                                        <PackagePlus className="h-4 w-4 text-emerald-600" />
+                                    </Button>
+                                    <Button variant="ghost" size="sm" title="Histórico">
+                                        <History className="h-4 w-4 text-slate-500" />
+                                    </Button>
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                 </Table>
             </div>
+
+            {selectedClient && (
+                <PackageDialog
+                    isOpen={isPackageDialogOpen}
+                    onClose={() => setIsPackageDialogOpen(false)}
+                    client={selectedClient}
+                    services={services}
+                />
+            )}
         </div>
     );
 }
