@@ -20,9 +20,10 @@ import { ClientSummaryDialog } from "./ClientSummaryDialog";
 interface ClientsPageProps {
     clients: any[];
     services: any[];
+    team: any[];
 }
 
-export default function ClientsPage({ clients, services }: ClientsPageProps) {
+export default function ClientsPage({ clients, services, team }: ClientsPageProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [isPackageDialogOpen, setIsPackageDialogOpen] = useState(false);
@@ -379,6 +380,8 @@ export default function ClientsPage({ clients, services }: ClientsPageProps) {
                 onClose={() => setIsSummaryDialogOpen(false)}
                 clientId={summaryClientId}
                 allClients={clients}
+                services={services}
+                team={team}
                 onEdit={(client) => {
                     setIsSummaryDialogOpen(false);
                     handleOpenDetail(client);

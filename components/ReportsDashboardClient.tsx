@@ -117,19 +117,23 @@ export default function ReportsDashboardClient({ summary, chartData, birthdays }
                         <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
                             {birthdays.length === 0 ? (
                                 <p className="text-center text-muted-foreground py-8">Nenhum aniversariante este mês.</p>
-                            ) : birthdays.map((client, idx) => (
-                                <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                                    <div>
-                                        <p className="font-semibold">{client.name}</p>
-                                        <p className="text-xs text-muted-foreground">{client.phone}</p>
+                            ) : birthdays.map((client, idx) => {
+                                const b = new Date(client.birthDate);
+                                const adjustedB = new Date(b.getTime() + b.getTimezoneOffset() * 60000);
+                                return (
+                                    <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                                        <div>
+                                            <p className="font-semibold">{client.name}</p>
+                                            <p className="text-xs text-muted-foreground">{client.phone}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-bold text-pink-600">
+                                                {adjustedB.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-sm font-bold text-pink-600">
-                                            {new Date(client.birthDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </CardContent>
                 </Card>

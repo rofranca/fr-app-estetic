@@ -98,3 +98,69 @@ export async function deleteBudget(budgetId: string) {
         throw new Error("Falha ao excluir orçamento");
     }
 }
+export async function getAllBudgets() {
+    try {
+        return await prisma.budget.findMany({
+            include: {
+                client: true,
+                user: true,
+                items: {
+                    include: { service: true }
+                }
+            },
+            orderBy: { createdAt: "desc" }
+        });
+    } catch (error) {
+        console.error("Error fetching all budgets:", error);
+        return [];
+    }
+}
+
+export async function updateBudget(id: string, data: {
+    name: string;
+    userId: string;
+    validUntil: Date;
+    status: string;
+    items: {
+        serviceId: string;
+        quantity: number;
+        pricePerSession: number;
+    }[];
+}) {
+    try {
+        const totalAmount = data.items.reduce((acc, item) => {
+            return acc + (item.quantity * item.pricePerSession);
+        }, 0);
+
+        // Delete old items and create new ones for simplicity
+        await prisma.budgetItem.deleteMany({
+            where: { budgetId: id }
+        });
+
+        const budget = await prisma.budget.update({
+            where: { id },
+            data: {
+                name: data.name,
+                userId: data.userId,
+                validUntil: data.validUntil,
+                status: data.status,
+                totalAmount: totalAmount,
+                items: {
+                    create: data.items.map(item => ({
+                        serviceId: item.serviceId,
+                        quantity: item.quantity,
+                        pricePerSession: item.pricePerSession,
+                        totalPrice: item.quantity * item.pricePerSession
+                    }))
+                }
+            }
+        });
+
+        revalidatePath("/budgets");
+        revalidatePath("/clients");
+        return budget;
+    } catch (error) {
+        console.error("Error updating budget:", error);
+        throw new Error("Falha ao atualizar orçamento");
+    }
+}

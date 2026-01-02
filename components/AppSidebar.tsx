@@ -18,7 +18,8 @@ import {
     PieChart,
     BarChart3,
     Activity,
-    Wallet
+    Wallet,
+    Calculator
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -51,6 +52,12 @@ const routes = [
         color: "text-pink-700",
     },
     {
+        label: "Orçamentos",
+        icon: Calculator,
+        href: "/budgets",
+        color: "text-blue-500",
+    },
+    {
         label: "Serviços",
         icon: Scissors,
         href: "/services",
@@ -76,6 +83,56 @@ const routes = [
     },
 ];
 
+function SidebarItem({ route, pathname }: { route: any, pathname: string }) {
+    const hasSubItems = route.subItems && route.subItems.length > 0;
+    const [isOpen, setIsOpen] = useState(false);
+    const isActive = pathname === route.href || route.subItems?.some((s: any) => s.href === pathname);
+
+    return (
+        <div className="space-y-1">
+            <div
+                onClick={() => hasSubItems ? setIsOpen(!isOpen) : null}
+                className={cn(
+                    "text-sm group flex p-3 w-full justify-start font-medium cursor-pointer hover:text-white hover:bg-white/10 rounded-lg transition",
+                    isActive && !hasSubItems ? "text-white bg-white/10" : "text-zinc-400"
+                )}
+            >
+                {hasSubItems ? (
+                    <div className="flex items-center flex-1">
+                        <route.icon className={cn("h-5 w-5 mr-3", route.color)} />
+                        {route.label}
+                        {isOpen ? <ChevronDown className="h-4 w-4 ml-auto" /> : <ChevronRight className="h-4 w-4 ml-auto" />}
+                    </div>
+                ) : (
+                    <Link href={route.href} className="flex items-center flex-1">
+                        <route.icon className={cn("h-5 w-5 mr-3", route.color)} />
+                        {route.label}
+                    </Link>
+                )}
+            </div>
+            {hasSubItems && isOpen && (
+                <div className="pl-8 space-y-1">
+                    {route.subItems?.map((sub: any) => (
+                        <Link
+                            key={sub.href}
+                            href={sub.href}
+                            className={cn(
+                                "text-sm group flex p-2 w-full justify-start font-medium cursor-pointer hover:text-white hover:bg-white/10 rounded-lg transition",
+                                pathname === sub.href ? "text-white bg-white/10" : "text-zinc-500"
+                            )}
+                        >
+                            <div className="flex items-center flex-1">
+                                <sub.icon className="h-4 w-4 mr-3" />
+                                {sub.label}
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export function AppSidebar() {
     const pathname = usePathname();
 
@@ -92,55 +149,9 @@ export function AppSidebar() {
                     </h1>
                 </Link>
                 <div className="space-y-1">
-                    {routes.map((route) => {
-                        const hasSubItems = route.subItems && route.subItems.length > 0;
-                        const [isOpen, setIsOpen] = useState(false);
-                        const isActive = pathname === route.href || route.subItems?.some(s => s.href === pathname);
-
-                        return (
-                            <div key={route.href} className="space-y-1">
-                                <div
-                                    onClick={() => hasSubItems ? setIsOpen(!isOpen) : null}
-                                    className={cn(
-                                        "text-sm group flex p-3 w-full justify-start font-medium cursor-pointer hover:text-white hover:bg-white/10 rounded-lg transition",
-                                        isActive && !hasSubItems ? "text-white bg-white/10" : "text-zinc-400"
-                                    )}
-                                >
-                                    {hasSubItems ? (
-                                        <div className="flex items-center flex-1">
-                                            <route.icon className={cn("h-5 w-5 mr-3", route.color)} />
-                                            {route.label}
-                                            {isOpen ? <ChevronDown className="h-4 w-4 ml-auto" /> : <ChevronRight className="h-4 w-4 ml-auto" />}
-                                        </div>
-                                    ) : (
-                                        <Link href={route.href} className="flex items-center flex-1">
-                                            <route.icon className={cn("h-5 w-5 mr-3", route.color)} />
-                                            {route.label}
-                                        </Link>
-                                    )}
-                                </div>
-                                {hasSubItems && isOpen && (
-                                    <div className="pl-8 space-y-1">
-                                        {route.subItems?.map((sub) => (
-                                            <Link
-                                                key={sub.href}
-                                                href={sub.href}
-                                                className={cn(
-                                                    "text-sm group flex p-2 w-full justify-start font-medium cursor-pointer hover:text-white hover:bg-white/10 rounded-lg transition",
-                                                    pathname === sub.href ? "text-white bg-white/10" : "text-zinc-500"
-                                                )}
-                                            >
-                                                <div className="flex items-center flex-1">
-                                                    <sub.icon className="h-4 w-4 mr-3" />
-                                                    {sub.label}
-                                                </div>
-                                            </Link>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
+                    {routes.map((route) => (
+                        <SidebarItem key={route.href} route={route} pathname={pathname} />
+                    ))}
                 </div>
             </div>
             <div className="px-3 py-2">

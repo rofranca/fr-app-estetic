@@ -27,31 +27,19 @@ interface ClientSummaryDialogProps {
     onClose: () => void;
     clientId: string;
     allClients: any[];
+    services: any[];
+    team: any[];
     onEdit: (client: any) => void;
     onSwitchClient: (clientId: string) => void;
 }
 
-export function ClientSummaryDialog({ isOpen, onClose, clientId, allClients, onEdit, onSwitchClient }: ClientSummaryDialogProps) {
+export function ClientSummaryDialog({ isOpen, onClose, clientId, allClients, services, team, onEdit, onSwitchClient }: ClientSummaryDialogProps) {
     const [client, setClient] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [showSearch, setShowSearch] = useState(false);
     const [isBudgetDialogOpen, setIsBudgetDialogOpen] = useState(false);
-    const [services, setServices] = useState<any[]>([]);
-    const [team, setTeam] = useState<any[]>([]);
-
-    useEffect(() => {
-        loadInitialData();
-    }, []);
-
-    const loadInitialData = async () => {
-        const [servicesData, teamData] = await Promise.all([
-            getServices(),
-            getTeam()
-        ]);
-        setServices(servicesData);
-        setTeam(teamData);
-    };
+    const [selectedBudget, setSelectedBudget] = useState<any>(null);
 
     useEffect(() => {
         if (isOpen && clientId) {
@@ -74,8 +62,11 @@ export function ClientSummaryDialog({ isOpen, onClose, clientId, allClients, onE
         cancelados: client?.appointments?.filter((a: any) => a.status === "CANCELLED").length || 0
     };
 
-    const age = client?.birthDate ? differenceInYears(new Date(), new Date(client.birthDate)) : null;
-    const birthdayStr = client?.birthDate ? format(new Date(client.birthDate), "dd/MM") : "";
+    const birthDateObj = client?.birthDate ? new Date(client.birthDate) : null;
+    const birthDateAdjusted = birthDateObj ? new Date(birthDateObj.getTime() + birthDateObj.getTimezoneOffset() * 60000) : null;
+
+    const age = birthDateAdjusted ? differenceInYears(new Date(), birthDateAdjusted) : null;
+    const birthdayStr = birthDateAdjusted ? format(birthDateAdjusted, "dd/MM") : "";
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -299,7 +290,10 @@ export function ClientSummaryDialog({ isOpen, onClose, clientId, allClients, onE
                                     <div className="bg-white rounded-lg border overflow-hidden">
                                         <div className="p-4 bg-slate-50 border-b flex justify-between items-center">
                                             <h3 className="text-sm font-bold text-slate-700">Orçamentos do Cliente</h3>
-                                            <Button size="sm" onClick={() => setIsBudgetDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700 font-bold text-xs">
+                                            <Button size="sm" onClick={() => {
+                                                setSelectedBudget(null);
+                                                setIsBudgetDialogOpen(true);
+                                            }} className="bg-blue-600 hover:bg-blue-700 font-bold text-xs">
                                                 <Plus className="h-3 w-3 mr-1" /> NOVO ORÇAMENTO
                                             </Button>
                                         </div>
@@ -363,20 +357,33 @@ export function ClientSummaryDialog({ isOpen, onClose, clientId, allClients, onE
                                                                 </Select>
                                                             </td>
                                                             <td className="px-6 py-4 text-right">
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-8 w-8 text-slate-400 hover:text-red-500"
-                                                                    onClick={async () => {
-                                                                        if (confirm("Deseja excluir este orçamento?")) {
-                                                                            await deleteBudget(b.id);
-                                                                            toast.success("Orçamento excluído");
-                                                                            loadProfile();
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
+                                                                <div className="flex items-center justify-end gap-1">
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8 text-slate-400 hover:text-blue-600"
+                                                                        onClick={() => {
+                                                                            setSelectedBudget(b);
+                                                                            setIsBudgetDialogOpen(true);
+                                                                        }}
+                                                                    >
+                                                                        <Edit3 className="h-4 w-4" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8 text-slate-400 hover:text-red-500"
+                                                                        onClick={async () => {
+                                                                            if (confirm("Deseja excluir este orçamento?")) {
+                                                                                await deleteBudget(b.id);
+                                                                                toast.success("Orçamento excluído");
+                                                                                loadProfile();
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     )) : (
@@ -468,11 +475,13 @@ export function ClientSummaryDialog({ isOpen, onClose, clientId, allClients, onE
                             isOpen={isBudgetDialogOpen}
                             onClose={() => {
                                 setIsBudgetDialogOpen(false);
+                                setSelectedBudget(null);
                                 loadProfile();
                             }}
                             client={{ id: client.id, name: client.name }}
                             services={services}
                             team={team}
+                            budget={selectedBudget}
                         />
                     </>
                 )}

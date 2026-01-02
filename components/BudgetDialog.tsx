@@ -6,19 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { DollarSign, Plus, Trash2, Calculator, Calendar as CalendarIcon, User, Tag } from "lucide-react";
-import { createBudget } from "@/app/actions/budget-actions";
+import { DollarSign, Plus, Trash2, Calculator, Tag } from "lucide-react";
+import { createBudget, updateBudget } from "@/app/actions/budget-actions";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 interface BudgetDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    client: { id: string, name: string };
+    client?: { id: string, name: string };
+    clients?: { id: string, name: string }[];
     services: { id: string, name: string, price: any }[];
     team: { id: string, name: string }[];
+    budget?: any;
 }
 
 interface SelectedItem {
@@ -30,11 +30,16 @@ interface SelectedItem {
     totalPrice: number;
 }
 
-export function BudgetDialog({ isOpen, onClose, client, services, team }: BudgetDialogProps) {
+export function BudgetDialog({ isOpen, onClose, client, clients, services, team, budget }: BudgetDialogProps) {
     const [name, setName] = useState("");
     const [validUntil, setValidUntil] = useState(format(new Date(new Date().setMonth(new Date().getMonth() + 1)), "yyyy-MM-dd"));
     const [status, setStatus] = useState("PENDENTE");
     const [userId, setUserId] = useState("");
+    const [selectedClientId, setSelectedClientId] = useState("");
+
+    const budgetsClientSelected = !client && clients && selectedClientId
+        ? clients.find(c => c.id === selectedClientId)
+        : null;
 
     // Item being added
     const [currentServiceId, setCurrentServiceId] = useState("");
@@ -47,14 +52,33 @@ export function BudgetDialog({ isOpen, onClose, client, services, team }: Budget
 
     useEffect(() => {
         if (isOpen) {
-            setName("");
-            setItems([]);
-            setUserId("");
+            if (budget) {
+                setName(budget.name);
+                setStatus(budget.status);
+                setUserId(budget.userId);
+                setValidUntil(budget.validUntil ? format(new Date(budget.validUntil), "yyyy-MM-dd") : "");
+                setItems(budget.items.map((item: any) => ({
+                    id: item.id,
+                    serviceId: item.serviceId,
+                    serviceName: item.service?.name || "Serviço",
+                    quantity: item.quantity,
+                    pricePerSession: Number(item.pricePerSession),
+                    totalPrice: Number(item.totalPrice)
+                })));
+                setSelectedClientId(budget.clientId);
+            } else {
+                setName("");
+                setItems([]);
+                setUserId("");
+                setStatus("PENDENTE");
+                setValidUntil(format(new Date(new Date().setMonth(new Date().getMonth() + 1)), "yyyy-MM-dd"));
+                setSelectedClientId(client?.id || "");
+            }
             setCurrentServiceId("");
             setCurrentQuantity(1);
             setCurrentPrice(0);
         }
-    }, [isOpen]);
+    }, [isOpen, budget]);
 
     const handleServiceChange = (id: string) => {
         setCurrentServiceId(id);
@@ -101,9 +125,12 @@ export function BudgetDialog({ isOpen, onClose, client, services, team }: Budget
 
         setLoading(true);
         try {
-            await createBudget({
+            const finalClientId = client?.id || selectedClientId;
+            if (!finalClientId) return toast.error("Selecione um cliente");
+
+            const budgetData = {
                 name,
-                clientId: client.id,
+                clientId: finalClientId,
                 userId,
                 validUntil: new Date(validUntil),
                 status,
@@ -112,11 +139,18 @@ export function BudgetDialog({ isOpen, onClose, client, services, team }: Budget
                     quantity: i.quantity,
                     pricePerSession: i.pricePerSession
                 }))
-            });
-            toast.success("Orçamento criado com sucesso!");
+            };
+
+            if (budget) {
+                await updateBudget(budget.id, budgetData);
+                toast.success("Orçamento atualizado com sucesso!");
+            } else {
+                await createBudget(budgetData);
+                toast.success("Orçamento criado com sucesso!");
+            }
             onClose();
         } catch (error) {
-            toast.error("Erro ao criar orçamento");
+            toast.error(budget ? "Erro ao atualizar orçamento" : "Erro ao criar orçamento");
         } finally {
             setLoading(false);
         }
@@ -125,18 +159,33 @@ export function BudgetDialog({ isOpen, onClose, client, services, team }: Budget
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-[95vw] sm:max-w-[1400px] w-full p-0 overflow-hidden bg-white border-none shadow-2xl h-[95vh] flex flex-col z-[110]">
-                <DialogHeader className="bg-blue-600 p-6 text-white shrink-0">
-                    <DialogTitle className="flex items-center text-xl font-bold">
-                        <DollarSign className="mr-2 h-6 w-6" />
-                        Novo Orçamento - {client.name}
+                <DialogHeader className="bg-white border-b px-6 py-4">
+                    <DialogTitle className="text-xl font-bold text-slate-800 flex items-center">
+                        <Calculator className="mr-2 h-5 w-5 text-blue-600" />
+                        {budget ? "Editar Orçamento" : "Novo Orçamento"}
+                        {(client || budgetsClientSelected) && ` - ${client?.name || budgetsClientSelected?.name}`}
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="flex flex-col lg:flex-row flex-1 min-h-0">
-                    {/* Main Form Area */}
-                    <div className="flex-1 p-8 overflow-y-auto space-y-8">
-                        {/* Budget Info */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="flex-1 flex overflow-hidden">
+                    {/* Left Side: Form */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-white">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {!client && clients && (
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label className="text-sm font-semibold text-slate-700">Cliente</Label>
+                                    <Select value={selectedClientId} onValueChange={setSelectedClientId} disabled={!!budget}>
+                                        <SelectTrigger className="bg-white border-slate-200 h-11">
+                                            <SelectValue placeholder="Selecione o cliente..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {clients.map(c => (
+                                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Nome do Orçamento</Label>
                                 <Input
@@ -226,7 +275,6 @@ export function BudgetDialog({ isOpen, onClose, client, services, team }: Budget
                         </div>
                     </div>
 
-                    {/* Summary Sidebar */}
                     <div className="w-full lg:w-[400px] bg-slate-50 border-l border-slate-200 flex flex-col">
                         <div className="p-4 bg-slate-800 text-white font-bold flex items-center justify-between shrink-0">
                             <span className="flex items-center text-sm"><Calculator className="h-4 w-4 mr-2" /> Resumo do Orçamento</span>
@@ -266,7 +314,7 @@ export function BudgetDialog({ isOpen, onClose, client, services, team }: Budget
                                     CANCELAR
                                 </Button>
                                 <Button onClick={handleSubmit} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-lg shadow-emerald-100">
-                                    {loading ? "SALVANDO..." : "FINALIZAR"}
+                                    {loading ? "SALVANDO..." : budget ? "ATUALIZAR" : "FINALIZAR"}
                                 </Button>
                             </div>
                         </div>
