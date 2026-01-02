@@ -1,3 +1,6 @@
+import CalendarClient from "@/components/CalendarClient";
+import { getAppointments, getClients, getServices, getProfessionals, getCalendarBlocks } from "../actions/appointment-actions";
+import { getOrganization } from "../actions/settings-actions";
 import { getRooms } from "../actions/room-actions";
 
 export default async function AgendaPage() {
