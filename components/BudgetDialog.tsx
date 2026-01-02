@@ -158,24 +158,23 @@ export function BudgetDialog({ isOpen, onClose, client, clients, services, team,
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-[95vw] sm:max-w-[1400px] w-full p-0 overflow-hidden bg-white border-none shadow-2xl h-[95vh] flex flex-col z-[110]">
-                <DialogHeader className="bg-white border-b px-6 py-4">
-                    <DialogTitle className="text-xl font-bold text-slate-800 flex items-center">
-                        <Calculator className="mr-2 h-5 w-5 text-blue-600" />
+            <DialogContent className="max-w-[95vw] sm:max-w-[1400px] w-full p-0 overflow-hidden bg-white border-none shadow-2xl h-[95vh] flex flex-col">
+                <DialogHeader className="bg-slate-800 p-6 text-white shrink-0">
+                    <DialogTitle className="flex items-center text-xl font-bold">
+                        <Calculator className="mr-2 h-6 w-6" />
                         {budget ? "Editar Orçamento" : "Novo Orçamento"}
                         {(client || budgetsClientSelected) && ` - ${client?.name || budgetsClientSelected?.name}`}
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="flex-1 flex overflow-hidden">
-                    {/* Left Side: Form */}
-                    <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-white">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+                    <div className="flex-1 p-8 overflow-y-auto space-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm">
                             {!client && clients && (
                                 <div className="space-y-2 md:col-span-2">
-                                    <Label className="text-sm font-semibold text-slate-700">Cliente</Label>
+                                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Cliente</Label>
                                     <Select value={selectedClientId} onValueChange={setSelectedClientId} disabled={!!budget}>
-                                        <SelectTrigger className="bg-white border-slate-200 h-11">
+                                        <SelectTrigger className="bg-white border-slate-200 h-11 w-full">
                                             <SelectValue placeholder="Selecione o cliente..." />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -212,7 +211,7 @@ export function BudgetDialog({ isOpen, onClose, client, clients, services, team,
                                 <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Status</Label>
                                 <Select value={status} onValueChange={setStatus}>
                                     <SelectTrigger className="bg-white border-slate-200 h-10 text-sm">
-                                        <SelectValue />
+                                        <SelectValue placeholder="Status..." />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="PENDENTE">Pendente</SelectItem>
