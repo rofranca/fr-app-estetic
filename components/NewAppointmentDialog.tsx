@@ -9,6 +9,21 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { createAppointment } from "@/app/actions/appointment-actions";
 import { getActivePackagesForClient } from "@/app/actions/package-actions";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
 
 interface NewAppointmentDialogProps {
     isOpen: boolean;
@@ -20,6 +35,7 @@ interface NewAppointmentDialogProps {
 }
 
 export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, services, professionals }: NewAppointmentDialogProps) {
+    const [openClient, setOpenClient] = useState(false)
     const [clientId, setClientId] = useState("");
     const [serviceId, setServiceId] = useState(""); // For single service selection
     const [professionalId, setProfessionalId] = useState(professionals[0]?.id || "");
@@ -132,18 +148,53 @@ export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, s
                     </div>
 
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="client" className="text-right">Cliente</Label>
+                        <Label htmlFor="client" className="text-right">
+                            Cliente
+                        </Label>
                         <div className="col-span-3">
-                            <Select onValueChange={setClientId} value={clientId}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Selecione o cliente" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {clients.map(c => (
-                                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Popover open={openClient} onOpenChange={setOpenClient}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={openClient}
+                                        className="w-full justify-between"
+                                    >
+                                        {clientId
+                                            ? clients.find((client) => client.id === clientId)?.name
+                                            : "Selecione o cliente..."}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[300px] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Buscar cliente..." />
+                                        <CommandList>
+                                            <CommandEmpty>Cliente não encontrado.</CommandEmpty>
+                                            <CommandGroup>
+                                                {clients.map((client) => (
+                                                    <CommandItem
+                                                        key={client.id}
+                                                        value={client.name}
+                                                        onSelect={() => {
+                                                            setClientId(client.id === clientId ? "" : client.id)
+                                                            setOpenClient(false)
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                clientId === client.id ? "opacity-100" : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {client.name}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                         </div>
                     </div>
 
@@ -206,12 +257,12 @@ export function NewAppointmentDialog({ isOpen, onClose, selectedDate, clients, s
                         <Label htmlFor="professional" className="text-right">Profissional</Label>
                         <div className="col-span-3">
                             <Select onValueChange={setProfessionalId} value={professionalId}>
-                                <SelectTrigger>
+                                <SelectTrigger className="h-12 text-base">
                                     <SelectValue placeholder="Selecione..." />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {professionals.map(p => (
-                                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                        <SelectItem key={p.id} value={p.id} className="text-base py-3">{p.name}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>

@@ -40,12 +40,13 @@ export async function getAppointments() {
     })
 }
 
-export async function updateAppointmentTime(id: string, newStart: Date, newEnd: Date, updateSeries: boolean = false) {
+export async function updateAppointmentTime(id: string, newStart: Date, newEnd: Date, updateSameDay: boolean = false) {
     try {
         const appointment = await prisma.appointment.findUnique({ where: { id } });
         if (!appointment) throw new Error("Appointment not found");
 
-        const startTimeDiff = new Date(newStart).getTime() - new Date(appointment.startTime).getTime();
+        const oldStart = new Date(appointment.startTime);
+        const startTimeDiff = new Date(newStart).getTime() - oldStart.getTime();
         const endTimeDiff = new Date(newEnd).getTime() - new Date(appointment.endTime).getTime();
 
         // Update current appointment
@@ -57,17 +58,27 @@ export async function updateAppointmentTime(id: string, newStart: Date, newEnd: 
             }
         });
 
-        // If series update requested and part of a package, update future appointments
-        if (updateSeries && appointment.packageId) {
-            const futureAppointments = await prisma.appointment.findMany({
+        // If same-day update requested
+        if (updateSameDay) {
+            // Find start and end of the original day
+            const startOfDay = new Date(oldStart);
+            startOfDay.setHours(0, 0, 0, 0);
+
+            const endOfDay = new Date(oldStart);
+            endOfDay.setHours(23, 59, 59, 999);
+
+            const sameDayAppointments = await prisma.appointment.findMany({
                 where: {
-                    packageId: appointment.packageId,
-                    startTime: { gt: appointment.startTime },
-                    id: { not: id } // Exclude current one explicitly just in case
+                    clientId: appointment.clientId,
+                    startTime: {
+                        gte: startOfDay,
+                        lte: endOfDay
+                    },
+                    id: { not: id } // Exclude the one we already updated
                 }
             });
 
-            for (const appt of futureAppointments) {
+            for (const appt of sameDayAppointments) {
                 const newApptStart = new Date(appt.startTime.getTime() + startTimeDiff);
                 const newApptEnd = new Date(appt.endTime.getTime() + endTimeDiff);
 
@@ -213,6 +224,57 @@ export async function updateAppointmentStatus(id: string, status: string) {
             where: { id },
             data: { status }
         });
+
+        // Update all other appointments for same client on same day
+        const startOfDay = new Date(appointment.startTime);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(appointment.startTime);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const sameDayAppointments = await prisma.appointment.findMany({
+            where: {
+                clientId: appointment.clientId,
+                startTime: {
+                    gte: startOfDay,
+                    lte: endOfDay
+                },
+                id: { not: id }
+            }
+        });
+
+        // Apply same logic (refund/consume) for related appointments? 
+        // Yes, if "All Regions" are cancelled/confirmed, we should update remainingSessions accordingly.
+        // NOTE: This could get complex if mixed packages are involved. 
+        // For simplicity and correctness, we should loop and recursively call this function? 
+        // Or refactor core logic. 
+        // Refactoring core logic into internal function is best to avoid infinite recursion.
+
+        // Simpler approach: Just update status and implement package logic locally here for loop.
+        for (const appt of sameDayAppointments) {
+            const apptOldStatus = appt.status;
+
+            // Package Logic for each related appt
+            if (status === 'CANCELLED' && apptOldStatus !== 'CANCELLED' && appt.packageId) {
+                await prisma.package.update({
+                    where: { id: appt.packageId },
+                    data: { remainingSessions: { increment: 1 }, status: 'ACTIVE' }
+                });
+            }
+            if (apptOldStatus === 'CANCELLED' && status !== 'CANCELLED' && appt.packageId) {
+                const pkg = await prisma.package.findUnique({ where: { id: appt.packageId } });
+                if (pkg && pkg.remainingSessions > 0) {
+                    await prisma.package.update({
+                        where: { id: appt.packageId },
+                        data: { remainingSessions: { decrement: 1 } }
+                    });
+                }
+            }
+
+            await prisma.appointment.update({
+                where: { id: appt.id },
+                data: { status }
+            });
+        }
 
         revalidatePath('/agenda');
         return { success: true };
